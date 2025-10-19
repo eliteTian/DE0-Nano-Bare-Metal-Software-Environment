@@ -1,0 +1,1 @@
+mkimage -A arm -O u-boot -T firmware -C none -a 0x00100040 -e 0x00100040 -n 'bare metal app' -d main.bin main.bin.img
