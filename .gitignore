@@ -1,2 +1,7 @@
 *.img
 *.elf
+*.o
+*.map
+*.objdump
+main.bin
+*.axf
