@@ -44,31 +44,31 @@ int main(void) {
 
     dbgReg((uint32_t)ALT_RSTMGR_PERMODRST_ADDR);
     
-    int scan_input;
+    uint32_t scan_input;
     int i;
     dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 	alt_setbits_word( ALT_GPIO1_SWPORTA_DDR_ADDR , USER_IO_DIR );
     dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 
-	for(i=0;i<20;i++)
+	for(i=0;i<5;i++)
 	{
-        printf("LED blink twicex10!\r\n");
+        printf("LED blinked 5 times!\r\n");
 		alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-		mysleep(50000*1000);
-        dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+		mysleep(5000*1000);
+        //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
     
 		alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-		mysleep(50000*1000);
-        dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+		mysleep(5000*1000);
+        //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
 
 	}
 
-
+    printf("Test the button!\r\n");
 	while(1){
-       // printf("Test the button!\r\n");
-        mysleep(5000*1000);
-		scan_input = alt_read_word( ALT_GPIO1_EXT_PORTA_ADDR );		
-		if(~scan_input&BUTTON_MASK)
+        //mysleep(5000*1000);
+		scan_input = alt_read_word( ALT_GPIO1_EXT_PORTA_ADDR );	
+        dbgReg((uint32_t)ALT_GPIO1_EXT_PORTA_ADDR);
+		if((~scan_input)&BUTTON_MASK)
 			alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
 		else    
             alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
@@ -83,6 +83,7 @@ void mysleep(uint32_t cycles) {
         cycles --;
     }
 }
+
 
 void dbgReg(uint32_t addr) {
     uint32_t val;

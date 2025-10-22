@@ -83,7 +83,7 @@ preloader: $(BIN)
 
 .PHONY: flash
 flash:
-	sudo dd if=../software/spl_bsp/preloader-mkpimage.bin of=/dev/sdb3
+	sudo dd if=../spl_bsp/preloader-mkpimage.bin of=/dev/sdb3
 	sudo dd if=main.img of=/dev/sdb3 bs=262144 seek=1
 	sync
 	sudo eject /dev/sdb
