@@ -16,21 +16,28 @@
 #define ALT_CPU_WDTGPT_TMR0_BASE (0xFFD02000)
 #define ALT_CPU_WDTGPT_TMR1_BASE (0xFFD03000)
 
-#define ALT_WDOG_CTRL_REG_OFFSET (0x0)
-#define ALT_WDOG_TMR_ENABLE (1<<0)
+//#define ALT_RSTMGR_PERMODRST_ADDR (0xFFD05014)         
+#define ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK (1<<25)
+#define ALT_RSTMGR_PERMODRST_GPIO1_SET_MSK (1<<26)
+#define ALT_RSTMGR_PERMODRST_GPIO2_SET_MSK (1<<27)
+//#define ALT_RSTMGR_ADDR (0xFFD05000)
+#define ALT_RSTMGR_PERMODRST_OFST (0x14)
+#define ALT_GPIO_BITMASK                0x1FFFFFFF
 
 void mysleep(uint32_t cycles);
 
 int main(void) {
-    
-	// initialize the pio controller
-	// led: set the direction of the HPS GPIO1 bits attached to LEDs to output
-    //int i;
-    printf("Let's test the LEDs after disable watch dog!\r\n");
-    alt_clrbits_word(ALT_CPU_WDTGPT_TMR0_BASE + ALT_WDOG_CTRL_REG_OFFSET, ALT_WDOG_TMR_ENABLE);
-    alt_clrbits_word(ALT_CPU_WDTGPT_TMR1_BASE + ALT_WDOG_CTRL_REG_OFFSET, ALT_WDOG_TMR_ENABLE);
+    //Uninit gpio module:
+    alt_replbits_word(ALT_RSTMGR_PERMODRST_ADDR, ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK |
+                      ALT_RSTMGR_PERMODRST_GPIO1_SET_MSK |
+                      ALT_RSTMGR_PERMODRST_GPIO2_SET_MSK,
+                      ALT_GPIO_BITMASK);
 
-    printf("Watch dog disabled!\r\n");
+    //Init gpio module: rst manager deassert resets
+    
+    alt_replbits_word(ALT_RSTMGR_PERMODRST_ADDR, ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK |
+                      ALT_RSTMGR_PERMODRST_GPIO1_SET_MSK |
+                      ALT_RSTMGR_PERMODRST_GPIO2_SET_MSK, 0);
     
     int scan_input;
     int i;
@@ -48,10 +55,12 @@ int main(void) {
 
 	while(1){
         printf("Test the button!\r\n");
+        mysleep(5000*1000);
 		scan_input = alt_read_word( ( ( ( uint32_t )(  ALT_GPIO1_EXT_PORTA_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ) );		
 		if(~scan_input&BUTTON_MASK)
 			alt_setbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
-		else    alt_clrbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
+		else    
+            alt_clrbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
 	}	
 
     
@@ -63,5 +72,7 @@ void mysleep(uint32_t cycles) {
         cycles --;
     }
 }
+
+
 
 
