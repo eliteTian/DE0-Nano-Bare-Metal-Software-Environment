@@ -51,6 +51,7 @@ CP := cp -f
 ELF ?= $(basename $(firstword $(C_SRC))).axf
 OBJ := $(patsubst %.c,%.o,$(C_SRC))
 BIN = $(basename $(firstword $(C_SRC))).bin
+IMG = $(basename $(BIN)).img
 
 .PHONY: all
 all: $(BIN)
@@ -75,5 +76,17 @@ $(ELF): $(OBJ)
 
 $(BIN): $(ELF)
 	$(OC) -O binary $(ELF) $(BIN)
+
+.PHONY: preloader
+preloader: $(BIN)
+	mkimage -A arm -O u-boot -T firmware -C none -a 0x00100040 -e 0x00100040 -n 'bare metal app' -d $(BIN) $(IMG)
+
+.PHONY: flash
+flash:
+	sudo dd if=preloader-mkpimage.bin of=/dev/sdb3
+	sudo dd if=main.img of=/dev/sdb3 bs=262144 seek=1
+	sync
+	sudo eject /dev/sdb
+	
 
 

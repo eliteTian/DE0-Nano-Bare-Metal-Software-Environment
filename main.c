@@ -25,6 +25,7 @@
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
 
 void mysleep(uint32_t cycles);
+void dbgReg(uint32_t addr);
 
 int main(void) {
     //Uninit gpio module:
@@ -32,35 +33,45 @@ int main(void) {
                       ALT_RSTMGR_PERMODRST_GPIO1_SET_MSK |
                       ALT_RSTMGR_PERMODRST_GPIO2_SET_MSK,
                       ALT_GPIO_BITMASK);
+    
+    dbgReg((uint32_t)ALT_RSTMGR_PERMODRST_ADDR);
 
     //Init gpio module: rst manager deassert resets
     
     alt_replbits_word(ALT_RSTMGR_PERMODRST_ADDR, ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK |
                       ALT_RSTMGR_PERMODRST_GPIO1_SET_MSK |
                       ALT_RSTMGR_PERMODRST_GPIO2_SET_MSK, 0);
+
+    dbgReg((uint32_t)ALT_RSTMGR_PERMODRST_ADDR);
     
     int scan_input;
     int i;
-	alt_setbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DDR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), USER_IO_DIR );
+    dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
+	alt_setbits_word( ALT_GPIO1_SWPORTA_DDR_ADDR , USER_IO_DIR );
+    dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 
-	for(i=0;i<2;i++)
+	for(i=0;i<20;i++)
 	{
-        printf("LED blink twice!\r\n");
-		alt_setbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
-		mysleep(5000*1000);
-		alt_clrbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
-		mysleep(5000*1000);
+        printf("LED blink twicex10!\r\n");
+		alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+		mysleep(50000*1000);
+        dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+    
+		alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+		mysleep(50000*1000);
+        dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+
 	}
 
 
 	while(1){
-        printf("Test the button!\r\n");
+       // printf("Test the button!\r\n");
         mysleep(5000*1000);
-		scan_input = alt_read_word( ( ( ( uint32_t )(  ALT_GPIO1_EXT_PORTA_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ) );		
+		scan_input = alt_read_word( ALT_GPIO1_EXT_PORTA_ADDR );		
 		if(~scan_input&BUTTON_MASK)
-			alt_setbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
+			alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
 		else    
-            alt_clrbits_word( ( ( ( uint32_t )( ALT_GPIO1_SWPORTA_DR_ADDR ) & ( uint32_t )( HW_REGS_MASK ) ) ), BIT_LED );
+            alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
 	}	
 
     
@@ -73,6 +84,11 @@ void mysleep(uint32_t cycles) {
     }
 }
 
+void dbgReg(uint32_t addr) {
+    uint32_t val;
+    val = alt_read_word(addr);
+    printf("Addr @ 0x%08x value is 0x%08x.\n", (unsigned int)(addr), (unsigned int)(val));
+}
 
 
 
