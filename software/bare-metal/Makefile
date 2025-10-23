@@ -12,6 +12,7 @@
 
 SOCEDS_ROOT ?= $(SOCEDS_DEST_ROOT)
 HWLIBS_ROOT = $(SOCEDS_ROOT)/ip/altera/hps/altera_hps/hwlib
+LOCAL_FILES = ./alt_ether
 
 # look for SoC EDS 15.0 directory structure
 ifneq (,$(wildcard $(SOCEDS_ROOT)/ip/altera/hps/altera_hps/hwlib/include/soc_cv_av/socal))
@@ -29,14 +30,14 @@ endif
 
 #ORIGINAL:EXAMPLE_SRC := fft.c hello.c io.c 
 #ORIGINAL:EXAMPLE_SRC += msgdma/sgdma_dispatcher.c
-EXAMPLE_SRC := main.c io.c
+EXAMPLE_SRC := main.c io.c $(wildcard $(LOCAL_FILES)/*.c)
 
 C_SRC       := $(EXAMPLE_SRC)
 
 LINKER_SCRIPT := cycloneV-dk-ram-modified.ld
 
 MULTILIBFLAGS := -mcpu=cortex-a9 -mfloat-abi=softfp -mfpu=neon 
-CFLAGS  := -g -O0 -Wall -Werror -std=c99 $(MULTILIBFLAGS) -I$(HWLIBS_ROOT)/include -I. -Imsgdma -Iqsys_headers -I$(SOCAL_ROOT) -Dsoc_cv_av
+CFLAGS  := -g -O0 -Wall -Werror -std=c99 $(MULTILIBFLAGS) -I$(HWLIBS_ROOT)/include -I. -Imsgdma -Iqsys_headers -I$(SOCAL_ROOT) -Dsoc_cv_av -I$(LOCAL_FILES)
 LDFLAGS := -T$(LINKER_SCRIPT) $(MULTILIBFLAGS)
 
 CROSS_COMPILE := arm-altera-eabi-
@@ -63,10 +64,10 @@ clean:
 	$(RM) *.objdump
 	$(RM) *.img
 
-%.c: $(HWLIBS_ROOT)/src/hwmgr/%.c
+%.c: $(HWLIBS_ROOT)/src/hwmgr/%.c $(LOCAL_FILES)/%.c
 	$(CP) $< $@
 
-$(OBJ): %.o: %.c Makefile $(QSYS_HDR_DIR)/$(QSYS_HDR)
+$(OBJ): %.o: %.c Makefile $(QSYS_HDR_DIR)/$(QSYS_HDR) $(LOCAL_FILES)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(ELF): $(OBJ)
