@@ -51,7 +51,6 @@ extern void * Alt_Emac_Addr[];
 static const uint32_t Phy_Addr[] = {
     EMAC0_PHY_ADDRESS,
     EMAC1_PHY_ADDRESS,
-    EMAC2_PHY_ADDRESS  
 };
 
 /******************************************************************************/
@@ -233,24 +232,24 @@ ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_r
     /* Prepare the MII address register value */
     tmpreg = 0;
     /* Set the PHY device address */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_PA_SET(phy_addr);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_PA_SET(phy_addr);
     /* Set the PHY register address */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_GR_SET(phy_reg);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GR_SET(phy_reg);
     /* Set the read mode */
-    tmpreg &= ALTX_EMAC_GMACGRP_GMII_ADDRESS_GW_CLR_MSK;
+    tmpreg &= ALT_EMAC_GMAC_GMII_ADDR_GW_CLR_MSK;
     /* Set the clock divider */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_CR_SET(ALTX_EMAC_GMACGRP_GMII_ADDRESS_CR_E_DIV102);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_CR_SET(ALT_EMAC_GMAC_GMII_ADDR_CR_E_DIV102);
     /* Set the MII Busy bit */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_GB_SET(ALTX_EMAC_GMACGRP_GMII_ADDRESS_GB_SET_MSK);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GB_SET(ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK);
     /* Write the result value into the MII Address register */
-    alt_write_word(ALTX_EMAC_GMACGRP_GMII_ADDRESS_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
+    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
     
     /* Check the Busy flag */
     do
     {
         timeout++;
-        tmpreg = alt_read_word(ALTX_EMAC_GMACGRP_GMII_ADDRESS_ADDR(Alt_Emac_Addr[emac_instance]));
-    } while ((tmpreg & ALTX_EMAC_GMACGRP_GMII_ADDRESS_GB_SET_MSK) && (timeout < PHY_READ_TO));
+        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]));
+    } while ((tmpreg & ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK) && (timeout < PHY_READ_TO));
     
     /* Return ERROR in case of timeout */
     if (timeout == PHY_READ_TO)
@@ -259,7 +258,7 @@ ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_r
     }
     
     /* Return data register value */
-    *rdval = alt_read_word(ALTX_EMAC_GMACGRP_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]));
+    *rdval = alt_read_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]));
     
     return ALT_E_SUCCESS;
 }
@@ -278,26 +277,26 @@ ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_
     /* Prepare the MII address register value */
     tmpreg = 0;
     /* Set the PHY device address */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_PA_SET(phy_addr);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_PA_SET(phy_addr);
     /* Set the PHY register address */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_GR_SET(phy_reg);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GR_SET(phy_reg);
     /* Set the write mode */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_GW_SET_MSK;
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GW_SET_MSK;
     /* Set the clock divider */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_CR_SET(ALTX_EMAC_GMACGRP_GMII_ADDRESS_CR_E_DIV102);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_CR_SET(ALT_EMAC_GMAC_GMII_ADDR_CR_E_DIV102);
     /* Set the MII Busy bit */
-    tmpreg |= ALTX_EMAC_GMACGRP_GMII_ADDRESS_GB_SET(ALTX_EMAC_GMACGRP_GMII_ADDRESS_GB_SET_MSK);
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GB_SET(ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK);
     /* Give the value to the MII data register */
-    alt_write_word(ALTX_EMAC_GMACGRP_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]), phy_value & 0xffff);
+    alt_write_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]), phy_value & 0xffff);
     /* Write the result value into the MII Address register */
-    alt_write_word(ALTX_EMAC_GMACGRP_GMII_ADDRESS_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
+    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
     
     /* Check the Busy flag */
     do
     {
         timeout++;
-        tmpreg = alt_read_word(ALTX_EMAC_GMACGRP_GMII_ADDRESS_ADDR(Alt_Emac_Addr[emac_instance]));
-    } while ((tmpreg & ALTX_EMAC_GMACGRP_GMII_ADDRESS_GB_SET_MSK) && (timeout < PHY_WRITE_TO));
+        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]));
+    } while ((tmpreg & ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK) && (timeout < PHY_WRITE_TO));
     
     /* Return ERROR in case of timeout */
     if (timeout == PHY_WRITE_TO)

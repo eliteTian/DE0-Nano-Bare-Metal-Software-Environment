@@ -63,6 +63,7 @@ clean:
 	$(RM) *.map
 	$(RM) *.objdump
 	$(RM) *.img
+	$(RM) $(LOCAL_FILES)/*.o
 
 %.c: $(HWLIBS_ROOT)/src/hwmgr/%.c $(LOCAL_FILES)/%.c
 	$(CP) $< $@

@@ -50,6 +50,23 @@
 #else
     #define dprintf null_printf
 #endif
+
+
+//void alt_dbg_reg(void* addr) {
+//    uint32_t val;
+//    val = alt_read_word(addr);
+//    printf("Addr @ 0x%08x value is 0x%08x.\r\n", (unsigned int)(addr), (unsigned int)(val));
+//}
+
+
+void alt_dbg_reg(const char *name, void *addr) {
+    uint32_t val = alt_read_word(addr);
+    printf("Addr @ %s (0x%p) value = 0x%08x\r\n", name, addr, val);
+}
+
+
+
+
  
 /* Lookup tables for the emac registers 
    Cooresponding to Emac0, Emac1, and Emac 2 */
@@ -103,9 +120,14 @@ void alt_eth_reset_mac(uint32_t instance)
     /* Program the phy_intf_sel field of the emac* register in the System Manager to select
        RGMII PHY interface. */
     //reg: sysmgr.ctrl @ physel_0/1
+    printf( "Hufei: check ALT_RSTMGR_PERMODRST_ADDR\r\n" );
+    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+    
     alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR,
                       Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  
                       ALT_SYSMGR_EMAC_CTL_PHYSEL_0_E_RGMII);
+
+
 
                     
     /* Disable the Ethernet Controller FPGA interface by clearing the emac_* bit in the fpgaintf_en_3

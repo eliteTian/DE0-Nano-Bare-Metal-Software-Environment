@@ -95,7 +95,7 @@ void mysleep(uint32_t cycles) {
 void dbgReg(uint32_t addr) {
     uint32_t val;
     val = alt_read_word(addr);
-    printf("Addr @ 0x%08x value is 0x%08x.\n", (unsigned int)(addr), (unsigned int)(val));
+    printf("Addr @ 0x%08x value is 0x%08x.\r\n", (unsigned int)(addr), (unsigned int)(val));
 }
 
 
@@ -112,18 +112,18 @@ int eth_main(void) {
     
     gmac_version = alt_read_word (ALT_EMAC1_GMAC_VER_ADDR);
     
-	printf( "SUCCESS: gmac eth1 version is %d\n",(unsigned int)gmac_version );
+	printf( "SUCCESS: gmac eth1 version is %d\r\n",(unsigned int)gmac_version );
     gmac_version = alt_read_word (ALT_EMAC0_GMAC_VER_ADDR);
-	printf( "SUCCESS: gmac eth0 version is %d\n",(unsigned int)gmac_version );
+	printf( "SUCCESS: gmac eth0 version is %d\r\n",(unsigned int)gmac_version );
 
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
-    printf( "SUCCESS: gmac eth1 link state is 0x %x\n",(unsigned int)stat );
+    printf( "SUCCESS: gmac eth1 link state is 0x %x\r\n",(unsigned int)stat );
 
     stat =  alt_read_word (ALT_SYSMGR_EMAC_CTL_ADDR);
-    printf( "SUCCESS: system manager emac group's ctrl register is 0x %x\n",(unsigned int)stat );
+    printf( "SUCCESS: system manager emac group's ctrl register is 0x %x\r\n",(unsigned int)stat );
 
     stat =  alt_read_word (ALT_SYSMGR_EMAC_L3MST_ADDR);
-    printf( "SUCCESS: system manager emac group's L3MST register is 0x %x\n",(unsigned int)stat );
+    printf( "SUCCESS: system manager emac group's L3MST register is 0x %x\r\n",(unsigned int)stat );
 
 
     uint8_t test_frame[64] = {
@@ -143,9 +143,9 @@ int eth_main(void) {
     alt_eth_dma_mac_config(&emac1);
     
     //send packet
-    printf( "Hufei: get ready to send packet\n" );
+    printf( "Hufei: get ready to send packet\r\n" );
     alt_eth_send_packet(test_frame, 64, 1, 1, &emac1);
-    printf( "Hufei: packet sent, check on wireshark\n" );
+    printf( "Hufei: packet sent, check on wireshark\r\n" );
 
     //uint32_t *p = (uint32_t *)&emac1;
     //uint32_t n = sizeof(&emac1) / sizeof(uint32_t);
