@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
-#include "altx_ethernet.h"
+
 #include "alt_eth_phy_ksz9031.h"
 #include "alt_ethernet.h"
 

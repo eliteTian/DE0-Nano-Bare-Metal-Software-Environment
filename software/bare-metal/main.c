@@ -69,6 +69,8 @@ int main(void) {
 	}
 
     printf("Test the button!\r\n");
+    eth_main();
+    
 	while(1){
         //mysleep(5000*1000);
 		scan_input = alt_read_word( ALT_GPIO1_EXT_PORTA_ADDR );	
@@ -143,7 +145,7 @@ int eth_main(void) {
     //send packet
     printf( "Hufei: get ready to send packet\n" );
     alt_eth_send_packet(test_frame, 64, 1, 1, &emac1);
-    //printf( "Hufei: packet sent, check on wireshark\n" );
+    printf( "Hufei: packet sent, check on wireshark\n" );
 
     //uint32_t *p = (uint32_t *)&emac1;
     //uint32_t n = sizeof(&emac1) / sizeof(uint32_t);
