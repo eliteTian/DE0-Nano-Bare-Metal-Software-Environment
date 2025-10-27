@@ -8,7 +8,7 @@
 #include "alt_ethernet.h"
 #include "alt_eth_phy_ksz9031.h"
 #include "socal/alt_sysmgr.h"
-#include <alt_printf.h>
+#include "alt_printf.h"
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -108,9 +108,12 @@ int main(void) {
 	alt_setbits_word( ALT_GPIO1_SWPORTA_DDR_ADDR , USER_IO_DIR );
     dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 
+    printf("LED should blink 5 times!\r\n");
 	for(i=0;i<5;i++)
 	{
-        printf("LED blinked 5 times!\r\n");
+        printf("LED blinked %d times!\r\n",i);
+        dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
+
 		alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
 		mysleep(5000*1000);
         //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
@@ -140,7 +143,7 @@ int main(void) {
         status = socfpga_int_start();
     }
 
-    if (status == ALT_E_SUCCESS)
+    if (status != ALT_E_SUCCESS)
     {
         for(i=0;i<5;i++)
 	    {

@@ -61,7 +61,7 @@
 
 void alt_dbg_reg(const char *name, void *addr) {
     uint32_t val = alt_read_word(addr);
-    printf("Addr @ %s (0x%p) value = 0x%08x\r\n", name, addr, val);
+    printf("Addr @ %s (0x%p) value = 0x%08x\r\n", name, addr, (unsigned int)val);
 }
 
 

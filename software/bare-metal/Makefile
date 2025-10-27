@@ -38,6 +38,7 @@ LINKER_SCRIPT := cycloneV-dk-ram-modified.ld
 
 MULTILIBFLAGS := -mcpu=cortex-a9 -mfloat-abi=softfp -mfpu=neon 
 CFLAGS  := -g -O0 -Wall -Werror -std=c99 $(MULTILIBFLAGS) -I$(HWLIBS_ROOT)/include -I. -Imsgdma -Iqsys_headers -I$(SOCAL_ROOT) -Dsoc_cv_av -I$(LOCAL_FILES)
+CFLAGS += -DPRINTF_HOST
 LDFLAGS := -T$(LINKER_SCRIPT) $(MULTILIBFLAGS)
 
 CROSS_COMPILE := arm-altera-eabi-
@@ -65,7 +66,7 @@ clean:
 	$(RM) *.img
 	$(RM) $(LOCAL_FILES)/*.o
 
-%.c: $(HWLIBS_ROOT)/src/hwmgr/%.c $(LOCAL_FILES)/%.c
+%.c: $(HWLIBS_ROOT)/src/hwmgr/%.c $(LOCAL_FILES)/%.c $(HWLIBS_ROOT)/src/utils/%.c
 	$(CP) $< $@
 
 $(OBJ): %.o: %.c Makefile $(QSYS_HDR_DIR)/$(QSYS_HDR) $(LOCAL_FILES)
