@@ -8,6 +8,7 @@
 #include "alt_ethernet.h"
 #include "alt_eth_phy_ksz9031.h"
 #include "socal/alt_sysmgr.h"
+#include <alt_printf.h>
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -32,6 +33,58 @@ void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 int eth_main(void);
 
+ALT_STATUS_CODE socfpga_int_start(void)
+{
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+    /*
+    // Initialize the global and CPU interrupt items
+    */
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_global_init();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_global_init() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_cpu_init();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_cpu_init() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    /*
+    // Enable the CPU and global interrupt
+    */
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_cpu_enable();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_cpu_enable() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_global_enable();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_global_enable() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    return status;
+}
+
+
 int main(void) {
     //Uninit gpio module:
     alt_replbits_word(ALT_RSTMGR_PERMODRST_ADDR, ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK |
@@ -49,7 +102,7 @@ int main(void) {
 
     dbgReg((uint32_t)ALT_RSTMGR_PERMODRST_ADDR);
     
-    uint32_t scan_input;
+    //uint32_t scan_input;
     int i;
     dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 	alt_setbits_word( ALT_GPIO1_SWPORTA_DDR_ADDR , USER_IO_DIR );
@@ -68,18 +121,58 @@ int main(void) {
 
 	}
 
-    printf("Test the button!\r\n");
-    eth_main();
-    
-	while(1){
-        //mysleep(5000*1000);
-		scan_input = alt_read_word( ALT_GPIO1_EXT_PORTA_ADDR );	
-        dbgReg((uint32_t)ALT_GPIO1_EXT_PORTA_ADDR);
-		if((~scan_input)&BUTTON_MASK)
-			alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
-		else    
-            alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
-	}	
+    //printf("Test the button!\r\n");
+    //eth_main();
+    //
+	//while(1){
+    //    //mysleep(5000*1000);
+	//	scan_input = alt_read_word( ALT_GPIO1_EXT_PORTA_ADDR );	
+    //    dbgReg((uint32_t)ALT_GPIO1_EXT_PORTA_ADDR);
+	//	if((~scan_input)&BUTTON_MASK)
+	//		alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
+	//	else    
+    //        alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
+	//}	
+
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    if (status == ALT_E_SUCCESS)
+    {
+        status = socfpga_int_start();
+    }
+
+    if (status == ALT_E_SUCCESS)
+    {
+        for(i=0;i<5;i++)
+	    {
+            printf("LED blinked 5 times!\r\n");
+	    	alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+	    	mysleep(500*1000);
+            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+        
+	    	alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+	    	mysleep(500*1000);
+            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+
+	    }
+        alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+
+
+    } else {
+        for(i=0;i<5;i++)
+	    {
+            printf("LED blinked 5 times!\r\n");
+	    	alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+	    	mysleep(5000*1000);
+            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+        
+	    	alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+	    	mysleep(5000*1000);
+            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
+
+	    }
+	    	alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+    }
+
 
     
 	return( 0 );
