@@ -206,46 +206,46 @@ void alt_eth_setup_txdesc(alt_eth_emac_instance_t * emac)
   
 }
 
-//ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callback_t callback)
-//{
-//    
-//    ALT_STATUS_CODE status = ALT_E_SUCCESS;    
-//    
-//    if (emac->instance==0) { emac->irqnum = ALT_INT_INTERRUPT_EMAC0_IRQ; }
-//    if (emac->instance==1) { emac->irqnum = ALT_INT_INTERRUPT_EMAC1_IRQ; }
-//         
-//    /* Ethernet IRQ Callback */
-//    status = alt_int_isr_register( emac->irqnum,
-//                            callback,
-//                            (void *)emac);
-//
-//    /* Configure the EMAC as Level. */
-//    if (status == ALT_E_SUCCESS)
-//    {
-//        status = alt_int_dist_trigger_set(emac->irqnum,
-//                                         ALT_INT_TRIGGER_AUTODETECT);
-//    }
-//   
-//    /* Configure the EMAC priority */
-//    if (status == ALT_E_SUCCESS)
-//    {  
-//        status = alt_int_dist_priority_set(emac->irqnum, 16);
-//    }
-//    
-//    /* Set CPUs 0 and 1 as the target. */
-//    if (status == ALT_E_SUCCESS)
-//    {                    
-//        status = alt_int_dist_target_set(emac->irqnum, 3);
-//    }
-//    
-//    /* Enable the interrupt in the Distributor. */
-//    if (status == ALT_E_SUCCESS)
-//    {
-//        status = alt_int_dist_enable(emac->irqnum);
-//    }
-//
-//    return status;
-//}
+ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callback_t callback)
+{
+    
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;    
+    
+    if (emac->instance==0) { emac->irqnum = ALT_INT_INTERRUPT_EMAC0_IRQ; }
+    if (emac->instance==1) { emac->irqnum = ALT_INT_INTERRUPT_EMAC1_IRQ; }
+         
+    /* Ethernet IRQ Callback */
+    status = alt_int_isr_register( emac->irqnum,
+                            callback,
+                            (void *)emac);
+
+    /* Configure the EMAC as Level. */
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_dist_trigger_set(emac->irqnum,
+                                         ALT_INT_TRIGGER_AUTODETECT);
+    }
+   
+    /* Configure the EMAC priority */
+    if (status == ALT_E_SUCCESS)
+    {  
+        status = alt_int_dist_priority_set(emac->irqnum, 16);
+    }
+    
+    /* Set CPUs 0 and 1 as the target. */
+    if (status == ALT_E_SUCCESS)
+    {                    
+        status = alt_int_dist_target_set(emac->irqnum, 3);
+    }
+    
+    /* Enable the interrupt in the Distributor. */
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_dist_enable(emac->irqnum);
+    }
+
+    return status;
+}
 
 void alt_eth_irq_callback(uint32_t icciar, void * context)
 {
@@ -291,20 +291,10 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     
     /* Reset the EMAC */
     alt_eth_reset_mac(emac->instance);
-
-    printf( "Hufei: EMAC reset done\r\n" );
-
      
     /* Reset the PHY  */
     status = alt_eth_phy_reset(emac->instance);
-    if (status != ALT_E_SUCCESS) { 
-        printf( "ERROR: Hufei: PHY reset unsuccessful\r\n" );
-        return status;
-
-    }
-
-    printf( "Hufei: PHY reset done\r\n" );
-
+    if (status != ALT_E_SUCCESS) { return status; }
     
     /* Configure the PHY */
     status = alt_eth_phy_config(emac->instance);
@@ -423,7 +413,7 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Addr[emac->instance]),1, 0);  
        
     /* Initialize the ethernet irq handler */   
-    //alt_eth_irq_init(emac, alt_eth_irq_callback);
+    alt_eth_irq_init(emac, alt_eth_irq_callback);
     
     /* Start the receive and transmit DMA */
     alt_eth_start(emac->instance);
@@ -1114,10 +1104,10 @@ ALT_STATUS_CODE alt_eth_get_packet(uint8_t * pkt, uint32_t * len, alt_eth_emac_i
     if ((numrxpackets & 0x1fff)==0) 
     {
 #ifdef ALT_DEBUG_ETHERNET
-        //dprintf("numrxpkts=%d numrxints=%d numtxints=%d missed=%d ovmiss=%d\n",
-        //  numrxpackets,emac->rxints,emac->txints,
-          //(uint32_t)alt_read_word(ALTX_EMAC_DMAGRP_MISSED_FRAME_AND_BUFFER_OVERFLOW_COUNTER_ADDR(Alt_Emac_Addr[emac->instance])) & 0xffff,
-          //((uint32_t)alt_read_word(ALTX_EMAC_DMAGRP_MISSED_FRAME_AND_BUFFER_OVERFLOW_COUNTER_ADDR(Alt_Emac_Addr[emac->instance])) >> 17) & 0x7ff);
+        dprintf("numrxpkts=%d numrxints=%d numtxints=%d missed=%d ovmiss=%d\n",
+          numrxpackets,emac->rxints,emac->txints,
+          (uint32_t)alt_read_word(ALTX_EMAC_DMAGRP_MISSED_FRAME_AND_BUFFER_OVERFLOW_COUNTER_ADDR(Alt_Emac_Addr[emac->instance])) & 0xffff,
+          ((uint32_t)alt_read_word(ALTX_EMAC_DMAGRP_MISSED_FRAME_AND_BUFFER_OVERFLOW_COUNTER_ADDR(Alt_Emac_Addr[emac->instance])) >> 17) & 0x7ff);
 #endif          
     }
               

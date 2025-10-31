@@ -39,7 +39,6 @@ LINKER_SCRIPT := cycloneV-dk-ram-modified.ld
 MULTILIBFLAGS := -mcpu=cortex-a9 -mfloat-abi=softfp -mfpu=neon 
 CFLAGS  := -g -O0 -Wall -Werror -std=c99 $(MULTILIBFLAGS) -I$(HWLIBS_ROOT)/include -I. -Imsgdma -Iqsys_headers -I$(SOCAL_ROOT) -Dsoc_cv_av -I$(LOCAL_FILES)
 CFLAGS += -DPRINTF_UART
-CFLAGS += -DALT_DEBUG_ETHERNET
 LDFLAGS := -T$(LINKER_SCRIPT) $(MULTILIBFLAGS)
 
 CROSS_COMPILE := arm-altera-eabi-

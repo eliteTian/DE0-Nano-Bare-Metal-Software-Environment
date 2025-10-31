@@ -9,6 +9,7 @@
 #include "alt_eth_phy_ksz9031.h"
 #include "socal/alt_sysmgr.h"
 #include "alt_printf.h"
+#include "alt_p2uart.h"
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -32,6 +33,8 @@
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 int eth_main(void);
+extern UART_INFO_t term0_info;
+
 
 ALT_STATUS_CODE socfpga_int_start(void)
 {
@@ -86,6 +89,15 @@ ALT_STATUS_CODE socfpga_int_start(void)
 
 
 int main(void) {
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    status = init_uart(&term0_info);
+    if (status != ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("ERROR: UART_INIT failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: UART_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
     //Uninit gpio module:
     alt_replbits_word(ALT_RSTMGR_PERMODRST_ADDR, ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK |
                       ALT_RSTMGR_PERMODRST_GPIO1_SET_MSK |
@@ -101,6 +113,8 @@ int main(void) {
                       ALT_RSTMGR_PERMODRST_GPIO2_SET_MSK, 0);
 
     dbgReg((uint32_t)ALT_RSTMGR_PERMODRST_ADDR);
+
+    
     
     //uint32_t scan_input;
     int i;
@@ -111,21 +125,17 @@ int main(void) {
     printf("LED should blink 5 times!\r\n");
 	for(i=0;i<5;i++)
 	{
-        printf("LED blinked %d times!\r\n",i);
+        ALT_PRINTF("LED blinked %d times!\r\n",i);
+        //ALT_PRINTF("ERROR: alt_int_global_init() failed, %" PRIi32 ".\n", status);
         dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
-
 		alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
 		mysleep(5000*1000);
-        //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
-    
 		alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
 		mysleep(5000*1000);
-        //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
-
 	}
 
     //printf("Test the button!\r\n");
-    //eth_main();
+    eth_main();
     //
 	//while(1){
     //    //mysleep(5000*1000);
@@ -137,44 +147,15 @@ int main(void) {
     //        alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR , BIT_LED );
 	//}	
 
-    ALT_STATUS_CODE status = ALT_E_SUCCESS;
     if (status == ALT_E_SUCCESS)
     {
         status = socfpga_int_start();
     }
 
-    if (status != ALT_E_SUCCESS)
-    {
-        for(i=0;i<5;i++)
-	    {
-            printf("LED blinked 5 times!\r\n");
-	    	alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-	    	mysleep(500*1000);
-            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
-        
-	    	alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-	    	mysleep(500*1000);
-            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
-
-	    }
-        alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-
-
-    } else {
-        for(i=0;i<5;i++)
-	    {
-            printf("LED blinked 5 times!\r\n");
-	    	alt_setbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-	    	mysleep(5000*1000);
-            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
-        
-	    	alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
-	    	mysleep(5000*1000);
-            //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DR_ADDR);
-
-	    }
-	    	alt_clrbits_word( ALT_GPIO1_SWPORTA_DR_ADDR, BIT_LED );
+    if (status == ALT_E_SUCCESS) {
+        ALT_PRINTF("SUCCESS: socfpga_int_start() finished, interrupt init done, %" PRIi32 ".\n", status);
     }
+    
 
 
     
