@@ -30,7 +30,7 @@ endif
 
 #ORIGINAL:EXAMPLE_SRC := fft.c hello.c io.c 
 #ORIGINAL:EXAMPLE_SRC += msgdma/sgdma_dispatcher.c
-EXAMPLE_SRC := main.c io.c $(wildcard $(LOCAL_FILES)/*.c)
+EXAMPLE_SRC := main.c $(wildcard $(LOCAL_FILES)/*.c)
 
 C_SRC       := $(EXAMPLE_SRC)
 

@@ -196,6 +196,7 @@ ALT_STATUS_CODE alt_eth_phy_reset(uint32_t emac_instance)
     if ((alt_eth_phy_write_register(emac_instance, PHY_BCR, PHY_RESET)) != ALT_E_SUCCESS)
     {
         /* Return ERROR in case of write timeout */
+        printf("PHY: Hufei: can't put phy in reset");
         return ALT_E_ERROR;
     }
         

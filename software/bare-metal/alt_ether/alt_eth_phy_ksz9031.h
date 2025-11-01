@@ -56,8 +56,8 @@ extern "C"
 
 /* Within a phy, there are some parameters that may change based upon the devkit or board. 
    This file supports the S10 DevKit.   The parameters which may change based on board follow: */
-#define EMAC0_PHY_ADDRESS               (7)
-#define EMAC1_PHY_ADDRESS               (0)   /* no phy */
+#define EMAC0_PHY_ADDRESS               (0)
+#define EMAC1_PHY_ADDRESS               (1)   /* no phy */
 #define EMAC2_PHY_ADDRESS               (0)   /* no phy */ 
 
 /* Micrel KSZ9031 Extended registers */           

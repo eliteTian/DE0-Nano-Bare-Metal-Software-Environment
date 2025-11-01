@@ -10,6 +10,7 @@
 #include "socal/alt_sysmgr.h"
 #include "alt_printf.h"
 #include "alt_p2uart.h"
+#include "alt_watchdog.h"
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -34,6 +35,8 @@ void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 int eth_main(void);
 extern UART_INFO_t term0_info;
+ALT_STATUS_CODE socfpga_watchdog_start(ALT_WDOG_TIMER_t tmr_id, ALT_WDOG_RESET_TYPE_t type,  uint32_t val);
+
 
 
 ALT_STATUS_CODE socfpga_int_start(void)
@@ -90,13 +93,34 @@ ALT_STATUS_CODE socfpga_int_start(void)
 
 int main(void) {
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
     status = init_uart(&term0_info);
-    if (status != ALT_E_SUCCESS)
-    {
+
+    
+    if (status != ALT_E_SUCCESS) {
         ALT_PRINTF("ERROR: UART_INIT failed, %" PRIi32 ".\n", status);
     } else {
         ALT_PRINTF("SUCCESS: UART_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
     }
+
+    ALT_WDOG_TIMER_t watchdog = ALT_WDOG0_INIT;
+
+    ALT_WDOG_RESET_TYPE_t reset_mode = ALT_WDOG_WARM_RESET;
+
+    uint32_t timer_val = 14;
+    uint32_t curr_val;
+    
+    status = socfpga_watchdog_start(watchdog,reset_mode,timer_val);
+
+    
+
+    if (status != ALT_E_SUCCESS){
+        ALT_PRINTF("ERROR: socfpga_watchdog_start failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: socfpga_watchdog_start success, %" PRIi32 ".\n", status);
+    }
+
+    
 
     //Uninit gpio module:
     alt_replbits_word(ALT_RSTMGR_PERMODRST_ADDR, ALT_RSTMGR_PERMODRST_GPIO0_SET_MSK |
@@ -134,8 +158,20 @@ int main(void) {
 		mysleep(5000*1000);
 	}
 
+    curr_val = alt_wdog_counter_get_current(watchdog);
+    ALT_PRINTF("SUCCESS: WATCHDOG current counter value is , %" PRIi32 ".\n", curr_val);
+
+
     //printf("Test the button!\r\n");
     eth_main();
+    //while(1) {
+	//	mysleep(5000*1000);
+    //    curr_val = alt_wdog_counter_get_current(watchdog);
+    //    ALT_PRINTF("SUCCESS: WATCHDOG current counter value after eth is , %" PRIi32 ".\n", curr_val);
+    //}
+
+
+
     //
 	//while(1){
     //    //mysleep(5000*1000);
@@ -174,6 +210,8 @@ void dbgReg(uint32_t addr) {
     val = alt_read_word(addr);
     printf("Addr @ 0x%08x value is 0x%08x.\r\n", (unsigned int)(addr), (unsigned int)(val));
 }
+
+
 
 
 int eth_main(void) {
@@ -230,5 +268,62 @@ int eth_main(void) {
 	return( 0 );
 }
 
+ALT_STATUS_CODE socfpga_watchdog_start(ALT_WDOG_TIMER_t tmr_id, ALT_WDOG_RESET_TYPE_t type, uint32_t val) {
+    
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+    uint32_t curr_val;
+
+    status = alt_wdog_init();
+
+    if (status != ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("ERROR: WATCHDOG init failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: WATCHDOG init SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+    curr_val = alt_wdog_counter_get_current(tmr_id);
+    ALT_PRINTF("SUCCESS: WATCHDOG current counter value is , %" PRIi32 ".\n", curr_val);
+
+
+    status = alt_wdog_response_mode_set(tmr_id,type);
+
+    if (status != ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("ERROR: WATCHDOG mode set failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: WATCHDOG mode set SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+    status = alt_wdog_counter_set(tmr_id, val);
+    if (status != ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("ERROR: WATCHDOG timeout set failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: WATCHDOG timeout set SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+    status = alt_wdog_start(tmr_id);
+    if (status != ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("ERROR: WATCHDOG timeout start failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: WATCHDOG timeout start SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+    curr_val = alt_wdog_counter_get_current(tmr_id);
+    ALT_PRINTF("SUCCESS: WATCHDOG current counter value is , %" PRIi32 ".\n", curr_val);
+
+    curr_val=alt_read_word(0xFFD02000);
+
+    ALT_PRINTF("SUCCESS: WATCHDOG control reg value is , %" PRIi32 ".\n", curr_val);
+
+
+
+
+    return status;
+
+}
 
 
