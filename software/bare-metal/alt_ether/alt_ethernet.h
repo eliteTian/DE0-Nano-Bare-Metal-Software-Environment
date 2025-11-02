@@ -48,9 +48,13 @@ extern "C"
 #endif  /* __cplusplus */
 
 #define ETH_RESET_DELAY           ((uint32_t)0x000FFFFF)
-#define NUMBER_OF_TX_DESCRIPTORS  32
-#define NUMBER_OF_RX_DESCRIPTORS  32
-#define ETH_BUFFER_SIZE           1536
+//#define NUMBER_OF_TX_DESCRIPTORS  32
+//#define NUMBER_OF_RX_DESCRIPTORS  32
+//#define ETH_BUFFER_SIZE           1536
+
+#define NUMBER_OF_TX_DESCRIPTORS  1
+#define NUMBER_OF_RX_DESCRIPTORS  1
+#define ETH_BUFFER_SIZE           32 
 
 typedef enum
 {

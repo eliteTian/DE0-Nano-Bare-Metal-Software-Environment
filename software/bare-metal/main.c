@@ -33,7 +33,7 @@
 
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
-int eth_main(void);
+int eth_main(alt_eth_emac_instance_t* emac);
 extern UART_INFO_t term0_info;
 ALT_STATUS_CODE socfpga_watchdog_start(ALT_WDOG_TIMER_t tmr_id, ALT_WDOG_RESET_TYPE_t type,  uint32_t val);
 
@@ -90,9 +90,13 @@ ALT_STATUS_CODE socfpga_int_start(void)
     return status;
 }
 
+static alt_eth_emac_instance_t emac1;
+
 
 int main(void) {
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+   // alt_eth_emac_instance_t emac1;
 
     status = init_uart(&term0_info);
 
@@ -111,6 +115,7 @@ int main(void) {
     uint32_t curr_val;
     
     status = socfpga_watchdog_start(watchdog,reset_mode,timer_val);
+
 
     
 
@@ -147,7 +152,7 @@ int main(void) {
     dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 
     printf("LED should blink 5 times!\r\n");
-	for(i=0;i<5;i++)
+	for(i=0;i<1;i++)
 	{
         ALT_PRINTF("LED blinked %d times!\r\n",i);
         //ALT_PRINTF("ERROR: alt_int_global_init() failed, %" PRIi32 ".\n", status);
@@ -163,7 +168,7 @@ int main(void) {
 
 
     //printf("Test the button!\r\n");
-    eth_main();
+    eth_main(&emac1);
     //while(1) {
 	//	mysleep(5000*1000);
     //    curr_val = alt_wdog_counter_get_current(watchdog);
@@ -214,14 +219,13 @@ void dbgReg(uint32_t addr) {
 
 
 
-int eth_main(void) {
+int eth_main(alt_eth_emac_instance_t* emac) {
 
 	uint32_t  gmac_version;
 	uint32_t  stat;
 
 
     //pointer and a cast. treates this region of space as if it's the type
-    alt_eth_emac_instance_t emac1;
 
 
     
@@ -254,12 +258,15 @@ int eth_main(void) {
         '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!'
     };
 
-    emac1.instance = 1;
-    alt_eth_dma_mac_config(&emac1);
+    emac->instance = 1;
+    alt_eth_dma_mac_config(emac);
     
     //send packet
     printf( "Hufei: get ready to send packet\r\n" );
-    alt_eth_send_packet(test_frame, 64, 1, 1, &emac1);
+    for(int i=0;i<20;i++) {
+        mysleep(5000*1000);
+        alt_eth_send_packet(test_frame, 64, 1, 1, emac);
+    }
     printf( "Hufei: packet sent, check on wireshark\r\n" );
 
     //uint32_t *p = (uint32_t *)&emac1;

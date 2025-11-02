@@ -914,20 +914,29 @@ void alt_eth_dma_resume_dma_rx(uint32_t instance)
 
 ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first, uint32_t last, alt_eth_emac_instance_t * emac)
 {
+    
     alt_eth_dma_desc_t *tx_desc;
+    printf("DBG: emac addr=%p\n",emac);
+
     int32_t index=0;
     unsigned int i;
     int32_t paranoid=NUMBER_OF_TX_DESCRIPTORS+1;
+    //printf("DBG: Start to execute send_packet!\r\n");
     
     tx_desc = &emac->tx_desc_ring[emac->tx_current_desc_number];
-    
+    printf("DBG: tx_desc=%p\n",tx_desc);
+
+    //printf("DBG: pointer checked,introduce some delay to avoid hang!\r\n"); //adding this printf between tx_desc and if(tx_desc->status) can resolve hang issue.
+    printf("DBG: pointer checked! check addresses \r\n");
+    //alt_eth_delay(128); //adding this delay between tx_desc and if(tx_desc->status) can resolve hang issue.
     /* Check if it is a free descriptor.  */
     if (tx_desc->status & ETH_DMATXDESC_OWN) 
     {
         /* Buffer is still owned by device.  */
         dprintf("No free tx descriptors!\n");
         return(ALT_E_ERROR);
-    }
+    } 
+
     
     /* check if len is too large */
     if (len >= ETH_BUFFER_SIZE)
@@ -940,6 +949,8 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     {
         *(uint8_t *)(emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE) + i) = *(pkt + i);
     }
+    alt_eth_delay(128);
+    printf("DBG: Data copied over!\r\n");
     
     /* set the buffer pointer */
     tx_desc->buffer1_addr = (uint32_t)&emac->tx_buf[emac->tx_current_desc_number * ETH_BUFFER_SIZE];
@@ -974,9 +985,11 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     /* if this is the last descriptor, set the chain's owned bits to owned by hardware */
     if (last)
     {
+        printf("DBG: Last situation over!\r\n");
         /* paranoid will never get to 0.  Its just here for non human paranoid error checkers */
         while (paranoid--)  
         {
+            printf("DBG: Within the loop!\r\n");
             tx_desc = &emac->tx_desc_ring[index];
             
             if (tx_desc->status & ETH_DMATXDESC_OWN)
