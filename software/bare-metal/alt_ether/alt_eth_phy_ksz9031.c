@@ -100,7 +100,9 @@ ALT_STATUS_CODE alt_eth_phy_config(uint32_t emac_instance)
     
     rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_HI_REG, PHY_MMD_D0_FLP_16MS_HI);
     if (rc==ALT_E_ERROR) { return rc; }
-    
+
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_HI_REG,&rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_MMD_D0_FLP_HI_REG,rdval);  
 #ifdef ALT_DEBUG_ETHERNET
     alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_CONTROL_PAD_SKEW_REG, &rdval);
     dprintf("skew reg 0x%x 0x%x\n",PHY_CONTROL_PAD_SKEW_REG,rdval);
@@ -132,14 +134,14 @@ ALT_STATUS_CODE alt_eth_phy_config(uint32_t emac_instance)
     rc = alt_eth_phy_read_register(emac_instance, PHY_AUTON, &rdval);
     if (rc==ALT_E_ERROR) { return rc; }
     
-    rdval |= (PHYANA_10BASET | PHYANA_10BASETFD | PHYANA_100BASETX | PHYANA_100BASETXFD);
+    rdval |= (PHYANA_10BASET | PHYANA_10BASETFD | PHYANA_100BASETX | PHYANA_100BASETXFD  | PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF  );
     rc = alt_eth_phy_write_register(emac_instance, PHY_AUTON, rdval);
     if (rc==ALT_E_ERROR) { return rc; }
       
     /* Set Advertise capabilities for 1000 Base-T/1000 Base-T full-duplex */   
-    rc = alt_eth_phy_write_register(emac_instance, PHY_1GCTL, 
-                ~(PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF));    
-    if (rc==ALT_E_ERROR) { return rc; }
+    //rc = alt_eth_phy_write_register(emac_instance, PHY_1GCTL, 
+    //            ~(PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF));    
+    //if (rc==ALT_E_ERROR) { return rc; }
     
     /* Wait for linked status... */
     timeout = 0;
@@ -155,7 +157,8 @@ ALT_STATUS_CODE alt_eth_phy_config(uint32_t emac_instance)
         dprintf("Error Link Down\n");
         return ALT_E_ERROR;
     }
-    dprintf("Link is up!\n");
+    
+    printf("Link is up!\n");
  
     /* Configure the PHY for AutoNegotiate */
     rc = alt_eth_phy_read_register(emac_instance, PHY_BCR, &rdval);  
@@ -181,7 +184,8 @@ ALT_STATUS_CODE alt_eth_phy_config(uint32_t emac_instance)
         dprintf("Error Auto Negotiation: Status reg = 0x%x\n",rdval);
         return ALT_E_ERROR;
     }
-    dprintf("Auto Negotiation Complete! \n");
+    
+    printf("Auto Negotiation Complete! \n");
      
     return ALT_E_SUCCESS;
 } 
@@ -271,7 +275,7 @@ ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_
     volatile uint32_t timeout = 0;
     uint32_t phy_addr;
     
-    if (emac_instance > 2) { return  ALT_E_ERROR; }    
+    if (emac_instance > 1) { return  ALT_E_ERROR; }    
     
     phy_addr=Phy_Addr[emac_instance];
      

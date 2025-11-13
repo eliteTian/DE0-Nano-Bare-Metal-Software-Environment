@@ -122,10 +122,11 @@ void alt_eth_reset_mac(uint32_t instance)
     //reg: sysmgr.ctrl @ physel_0/1
     printf( "Hufei: check ALT_RSTMGR_PERMODRST_ADDR\r\n" );
     alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+
     
-    alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR,
-                      Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  
-                      ALT_SYSMGR_EMAC_CTL_PHYSEL_0_E_RGMII);
+            //alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR,
+            //          Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  
+            //          ALT_SYSMGR_EMAC_CTL_PHYSEL_1_E_RGMII); //bug here it was mistaken as PHYSEL_0
 
 
 
@@ -133,13 +134,85 @@ void alt_eth_reset_mac(uint32_t instance)
     /* Disable the Ethernet Controller FPGA interface by clearing the emac_* bit in the fpgaintf_en_3
       register of the System Manager. */
     //reg: 
-    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[instance]);           
+    //  alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[instance]); 
+    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[0]);           
+    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[1]);           
                     
     /* clear the emac* bit in the permodrst register of
        the Reset Manager to bring the EMAC out of reset. */
     alt_clrbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
+    
+    printf( "Hufei: check RST and SYS MGR reg values\r\n" );
+    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+    alt_dbg_reg("ALT_SYSMGR_EMAC_CTL_ADDR",ALT_SYSMGR_EMAC_CTL_ADDR);
+    //alt_eth_delay(20000*2000);
       
 }   
+
+void alt_eth_emac_dma_init(uint32_t instance){
+
+    if (instance > 1) { return; }
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    
+    status = alt_eth_software_reset(instance);
+    if (status != ALT_E_SUCCESS) { 
+        printf( "Hufei: DMA INIT Ethenet soft reset not successful\r\n" );
+        return;
+    }    
+
+}
+
+
+void alt_eth_emac_hps_init(uint32_t instance){
+
+    if (instance > 1) { return; }
+
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+     
+    //step1./* Reset the EMAC */
+    alt_setbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
+    
+    /* Program the phy_intf_sel field of the emac* register in the System Manager to select
+       RGMII PHY interface. */
+    //reg: sysmgr.ctrl @ physel_0/1
+    printf( "Hufei: check ALT_RSTMGR_PERMODRST_ADDR\r\n" );
+    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+    //step2 is already the right value by default.
+    //step3. bring phy out of reset.
+    status = alt_eth_phy_reset(instance);
+    
+    if (status != ALT_E_SUCCESS) { 
+        printf( "ERROR: Hufei: PHY reset unsuccessful\r\n" );
+        return ;
+    }
+    //step4. configure sysmgr registers
+     alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR,
+               Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  
+               ALT_SYSMGR_EMAC_CTL_PHYSEL_1_E_RGMII); //bug here it was mistaken as PHYSEL_0
+
+
+
+                    
+    /* Disable the Ethernet Controller FPGA interface by clearing the emac_* bit in the fpgaintf_en_3
+      register of the System Manager. */
+    //reg: 
+    //  alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[instance]); 
+    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[0]);           
+    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[1]);           
+    //step6. 
+    printf( "Hufei: check RST and SYS MGR reg values\r\n" );
+    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+    alt_dbg_reg("ALT_SYSMGR_EMAC_CTL_ADDR",ALT_SYSMGR_EMAC_CTL_ADDR);
+    //step7. clear reset bit of emac
+    /* clear the emac* bit in the permodrst register of
+       the Reset Manager to bring the EMAC out of reset. */
+    alt_clrbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
+    
+    //alt_eth_delay(20000*2000);
+}
+
+
 
 void alt_eth_reinit_rxdesc(alt_eth_emac_instance_t * emac)
 {
@@ -206,46 +279,46 @@ void alt_eth_setup_txdesc(alt_eth_emac_instance_t * emac)
   
 }
 
-//ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callback_t callback)
-//{
-//    
-//    ALT_STATUS_CODE status = ALT_E_SUCCESS;    
-//    
-//    if (emac->instance==0) { emac->irqnum = ALT_INT_INTERRUPT_EMAC0_IRQ; }
-//    if (emac->instance==1) { emac->irqnum = ALT_INT_INTERRUPT_EMAC1_IRQ; }
-//         
-//    /* Ethernet IRQ Callback */
-//    status = alt_int_isr_register( emac->irqnum,
-//                            callback,
-//                            (void *)emac);
-//
-//    /* Configure the EMAC as Level. */
-//    if (status == ALT_E_SUCCESS)
-//    {
-//        status = alt_int_dist_trigger_set(emac->irqnum,
-//                                         ALT_INT_TRIGGER_AUTODETECT);
-//    }
-//   
-//    /* Configure the EMAC priority */
-//    if (status == ALT_E_SUCCESS)
-//    {  
-//        status = alt_int_dist_priority_set(emac->irqnum, 16);
-//    }
-//    
-//    /* Set CPUs 0 and 1 as the target. */
-//    if (status == ALT_E_SUCCESS)
-//    {                    
-//        status = alt_int_dist_target_set(emac->irqnum, 3);
-//    }
-//    
-//    /* Enable the interrupt in the Distributor. */
-//    if (status == ALT_E_SUCCESS)
-//    {
-//        status = alt_int_dist_enable(emac->irqnum);
-//    }
-//
-//    return status;
-//}
+ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callback_t callback)
+{
+    
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;    
+    
+    if (emac->instance==0) { emac->irqnum = ALT_INT_INTERRUPT_EMAC0_IRQ; }
+    if (emac->instance==1) { emac->irqnum = ALT_INT_INTERRUPT_EMAC1_IRQ; }
+         
+    /* Ethernet IRQ Callback */
+    status = alt_int_isr_register( emac->irqnum,
+                            callback,
+                            (void *)emac);
+
+    /* Configure the EMAC as Level. */
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_dist_trigger_set(emac->irqnum,
+                                         ALT_INT_TRIGGER_AUTODETECT);
+    }
+   
+    /* Configure the EMAC priority */
+    if (status == ALT_E_SUCCESS)
+    {  
+        status = alt_int_dist_priority_set(emac->irqnum, 16);
+    }
+    
+    /* Set CPUs 0 and 1 as the target. */
+    if (status == ALT_E_SUCCESS)
+    {                    
+        status = alt_int_dist_target_set(emac->irqnum, 3);
+    }
+    
+    /* Enable the interrupt in the Distributor. */
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_dist_enable(emac->irqnum);
+    }
+
+    return status;
+}
 
 void alt_eth_irq_callback(uint32_t icciar, void * context)
 {
@@ -287,7 +360,7 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     uint32_t phy_duplex_status, phy_speed;
     ALT_STATUS_CODE status;  
     
-    if (emac->instance > 2) { return ALT_E_ERROR; }        
+    if (emac->instance > 1) { return ALT_E_ERROR; }        
     
     /* Reset the EMAC */
     alt_eth_reset_mac(emac->instance);
@@ -303,16 +376,28 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
 
     }
 
-    printf( "Hufei: PHY reset done\r\n" );
 
+
+
+    
     
     /* Configure the PHY */
     status = alt_eth_phy_config(emac->instance);
     if (status != ALT_E_SUCCESS) { return status; }    
+
+    printf( "Hufei: PHY config done\r\n" );
+
       
     /* Reset the Ethernet */
     status = alt_eth_software_reset(emac->instance);
-    if (status != ALT_E_SUCCESS) { return status; }    
+    if (status != ALT_E_SUCCESS) { 
+        printf( "Hufei: Ethenet soft reset not successful\r\n" );
+        return status;
+    }    
+
+    printf( "Hufei: Ethenet reset done\r\n" );
+
+    
         
     /* note: this does not mean Enhanced Descriptor Format which is always used in A10/S10 */
     #ifdef USE_ALTERNATE_DESCRIPTOR_SIZE          
@@ -416,8 +501,19 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
                         ALT_ETH_DISABLE, emac->instance); 
                         
     /* Set the Gmac Configuration Register */
+
+    
+    printf( "CRITICAL: GMAC config register to be written is 0x %x\r\n",(unsigned int)alt_mac_config_reg_settings );
+
     alt_write_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Addr[emac->instance]),
-                   alt_mac_config_reg_settings);  
+                   alt_mac_config_reg_settings);
+
+
+    alt_mac_config_reg_settings = alt_read_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Addr[emac->instance]));
+
+    printf( "CRITICAL: GMAC config register readout is 0x %x\r\n",(unsigned int)alt_mac_config_reg_settings );
+
+
     
     /* Disable promiscuous mode */
     alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Addr[emac->instance]),1, 0);  
@@ -468,8 +564,29 @@ void alt_eth_mac_set_rx_state(alt_eth_enable_disable_state_t new_state, uint32_t
     }
 }
 
-void alt_eth_start(uint32_t instance)
-{
+void alt_eth_start(uint32_t instance){
+
+    uint32_t stat;
+    stat = alt_read_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Addr[instance]));
+    printf( "GMAC_CONFIG status before eth_start:  0x%08x\n", stat );
+
+
+    stat = alt_read_word(ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf( "DMA_OPMODE status before eth_start:  0x%08x\n", stat );
+
+    stat = alt_read_word( ALT_EMAC_DMA_STAT_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf( "DMA_STATUS status before eth_start:  0x%08x\n", stat );
+    
+    stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: Transmit descriptor addr to be read from dma is 0x%08x !\n",stat);
+
+    stat = alt_read_word(ALT_EMAC_DMA_RX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: the RX descriptor addr previously set to dma is 0x%08x !\n",stat);
+
+    stat = alt_read_word (ALT_CLKMGR_PERPLL_EN_ADDR   );
+	printf(  "CLKmanager: clock enable status are, we will enable emac1 bit  0x%08x\n",stat );
+    alt_setbits_word ((ALT_CLKMGR_PERPLL_EN_ADDR  ) , ALT_CLKMGR_PERPLL_EN_EMAC1CLK_SET_MSK); 
+    
     /* Enable transmit state machine of the MAC for transmission on the MII */  
     alt_eth_mac_set_tx_state(ALT_ETH_ENABLE, instance);
     
@@ -485,7 +602,24 @@ void alt_eth_start(uint32_t instance)
     /* Start DMA reception */
     alt_eth_dma_set_rx_state(ALT_ETH_ENABLE, instance); 
     
-    alt_eth_delay(ETH_RESET_DELAY);  
+    alt_eth_delay(ETH_RESET_DELAY);
+
+    stat=alt_read_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Addr[instance]));
+    printf( "GMAC_CONFIG status after eth_start:  0x%08x\n", stat );
+
+
+    stat = alt_read_word( ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf( "DMA_OPMODE status after eth_start:  0x%08x\n", stat );
+    
+    stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR  (Alt_Emac_Dma_Grp_Addr[instance]));
+    printf( "DMA_STATUS status after eth_start:  0x%08x\n", stat );
+
+    stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: Transmit descriptor addr to be read from dma after eth_start is 0x%08x !\n",stat);
+
+    stat = alt_read_word(ALT_EMAC_DMA_RX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: the RX descriptor addr previously set to dma after eth_start is 0x%08x !\n",stat);
+    
     
 }
 
@@ -687,13 +821,21 @@ alt_eth_set_reset_state_t alt_eth_get_software_reset_status(uint32_t instance)
 ALT_STATUS_CODE alt_eth_software_reset(uint32_t instance)
 {
     unsigned int i;
+    uint32_t val;
     
     if (instance > 2) { return ALT_E_ERROR; }    
     
     /* Set the SWR bit: resets all MAC subsystem internal registers and logic */
     /* After reset all the registers holds their respective reset values */
+    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]));
+    printf("DBG: DMA_MOD_REG=%u\r\n",val);
+
     alt_setbits_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]), 
                      ALT_EMAC_DMA_BUS_MOD_SWR_SET_MSK);
+
+    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]));
+    printf("DBG: DMA_MOD_REG=%u\r\n",val);
+    
                         
     /* Wait for the software reset to clear */
     for (i = 0; i < 10; i++)
@@ -701,9 +843,16 @@ ALT_STATUS_CODE alt_eth_software_reset(uint32_t instance)
         alt_eth_delay(ETH_RESET_DELAY);
         if (alt_eth_get_software_reset_status(instance) == ALT_ETH_RESET)
         {
+            printf("Wait for software reset to clear %d times.", i);
             break;
         }
+        printf("Wait for software reset to clear %d times.\r\n", i);
+
+
     }
+
+    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]));
+    printf("DBG: DMA_MOD_REG=%u\r\n",val);
     
     if (i==10) { return ALT_E_ERROR; }
     
@@ -917,7 +1066,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     
     alt_eth_dma_desc_t *tx_desc;
     printf("DBG: emac addr=%p\n",emac);
-
+    //uint32_t * txbuf;
     int32_t index=0;
     unsigned int i;
     int32_t paranoid=NUMBER_OF_TX_DESCRIPTORS+1;
@@ -925,6 +1074,9 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     
     tx_desc = &emac->tx_desc_ring[emac->tx_current_desc_number];
     printf("DBG: tx_desc=%p\n",tx_desc);
+    uint32_t* tx_desc_word = (uint32_t*) tx_desc;
+
+
 
     //printf("DBG: pointer checked,introduce some delay to avoid hang!\r\n"); //adding this printf between tx_desc and if(tx_desc->status) can resolve hang issue.
     printf("DBG: pointer checked! check addresses \r\n");
@@ -950,10 +1102,21 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
         *(uint8_t *)(emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE) + i) = *(pkt + i);
     }
     alt_eth_delay(128);
-    printf("DBG: Data copied over!\r\n");
+    //printf("DBG: Data copied over!\r\n");
+
+    //txbuf = (uint32_t*)&emac->tx_buf;
+    //for (i = 0; i < 32; i++) {
+    //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
+    //}
+
+
+
+
+
     
     /* set the buffer pointer */
     tx_desc->buffer1_addr = (uint32_t)&emac->tx_buf[emac->tx_current_desc_number * ETH_BUFFER_SIZE];
+    printf("DBG: tx_desc->buffer1_addr=%p\n",tx_desc->buffer1_addr);
     
     /* Set the buffer size.  */
     tx_desc->control_buffer_size = (len & ETH_DMATXDESC_TBS1);
@@ -980,17 +1143,26 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
 
     /* Set the current index to the next descriptor.  */
     emac->tx_current_desc_number = (emac->tx_current_desc_number + 1);
-    if (emac->tx_current_desc_number >= NUMBER_OF_TX_DESCRIPTORS) { emac->tx_current_desc_number=0; }      
+    if (emac->tx_current_desc_number >= NUMBER_OF_TX_DESCRIPTORS) { emac->tx_current_desc_number=0; }  
+
+    for (i = 0; i < 4; i++) {
+        printf("tx_desc content: DBG[%d]: 0x%08x\r\n", i, tx_desc_word[i]);
+    }
+
     
     /* if this is the last descriptor, set the chain's owned bits to owned by hardware */
     if (last)
     {
-        printf("DBG: Last situation over!\r\n");
+       // printf("DBG: Last situation over!\r\n");
         /* paranoid will never get to 0.  Its just here for non human paranoid error checkers */
         while (paranoid--)  
         {
             printf("DBG: Within the loop!\r\n");
             tx_desc = &emac->tx_desc_ring[index];
+            for (i = 0; i < 4; i++) {
+                printf("tx_desc content before set OWN: DBG[%d]: 0x%08x\r\n", i, tx_desc_word[i]);
+            }
+
             
             if (tx_desc->status & ETH_DMATXDESC_OWN)
             {
@@ -1005,6 +1177,11 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
          
             /* Set OWN bit.  */
             tx_desc->status |= ETH_DMATXDESC_OWN;
+            
+            for (i = 0; i < 4; i++) {
+                printf("tx_desc content after set OWN: DBG[%d]: 0x%08x\r\n", i, tx_desc_word[i]);
+            }
+      alt_eth_delay(1280*1000); //optional          
 
 #ifdef USE_ENHANCED_DMA_DESCRIPTORS            
             if (tx_desc->status & ETH_DMATXDESC_FS) { break; }
@@ -1018,12 +1195,16 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
         /* If the DMA transmission is suspended, resume transmission.  */
         if (alt_eth_dma_check_status_reg(ALT_EMAC_DMA_STAT_TS_SET_MSK,emac->instance))
         {         
+            printf("Are we trnsmitting!\n");     
             /* Clear TBUS ETHERNET DMA flag */
             alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_STAT_TS_SET_MSK,emac->instance);
             
             /* Resume DMA transmission */
             alt_eth_dma_resume_dma_tx(emac->instance);
         }
+
+        alt_eth_start(emac->instance);
+
     }    
 
     return ALT_E_SUCCESS;

@@ -54,7 +54,7 @@ extern "C"
 
 #define NUMBER_OF_TX_DESCRIPTORS  1
 #define NUMBER_OF_RX_DESCRIPTORS  1
-#define ETH_BUFFER_SIZE           32 
+#define ETH_BUFFER_SIZE           128 
 
 typedef enum
 {
@@ -440,7 +440,8 @@ void alt_eth_delay(volatile uint32_t delay);
  *              The EMAC instance 0,1, or 2.
  */
 void alt_eth_reset_mac(uint32_t instance);
-
+void alt_eth_emac_hps_init(uint32_t instance);
+void alt_eth_emac_dma_init(uint32_t instance);
 /******************************************************************************/
 /*!
  * Initalizes the RX Descriptor ring

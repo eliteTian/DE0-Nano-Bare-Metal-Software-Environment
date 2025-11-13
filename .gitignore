@@ -5,4 +5,4 @@
 *.objdump
 main.bin
 *.axf
-debug
+*.txt

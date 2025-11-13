@@ -1,0 +1,28 @@
+
+Autobooting in 5 seconds, type  "stop" to stop
+SOCFPGA_CYCLONE5 # fatload mmc 0:1 ${fpgadata} /fpga_files/com1.rbf
+reading /fpga_files/com1.rbf
+1439776 bytes read in 82 ms (16.7 MiB/s)
+SOCFPGA_CYCLONE5 # fpga load 0 ${fpgadata} ${filesize}
+SOCFPGA_CYCLONE5 # fatload mmc 0:1 0x00100040 main.bin
+reading main.bin
+56296 bytes read in 10 ms (5.4 MiB/s)
+SOCFPGA_CYCLONE5 # go 0x00100040
+## Starting application at 0x00100040 ...
+Addr @ 0xffd05014 value is 0x0fbef035.
+Addr @ 0xffd05014 value is 0x01bef035.
+Addr @ 0xff709004 value is 0x00000000.
+Addr @ 0xff709004 value is 0x01000000.
+LED blinked 5 times!
+LED blinked 5 times!
+LED blinked 5 times!
+LED blinked 5 times!
+LED blinked 5 times!
+Test the button!
+SUCCESS: gmac eth1 version is 4151
+SUCCESS: gmac eth0 version is 0
+SUCCESS: gmac eth1 link state is 0x 0
+SUCCESS: system manager emac group's ctrl register is 0x 6
+SUCCESS: system manager emac group's L3MST register is 0x 0
+Hufei: get ready to send packet
+

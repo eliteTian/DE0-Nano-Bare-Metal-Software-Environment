@@ -55,14 +55,14 @@ extern "C"
 */
 
 /* Within a phy, there are some parameters that may change based upon the devkit or board. 
-   This file supports the S10 DevKit.   The parameters which may change based on board follow: */
+   This file supports the cv de0-nano board.   The parameters which may change based on board follow: */
 #define EMAC0_PHY_ADDRESS               (0)
 #define EMAC1_PHY_ADDRESS               (1)   /* no phy */
 #define EMAC2_PHY_ADDRESS               (0)   /* no phy */ 
 
 /* Micrel KSZ9031 Extended registers */           
 #define PHY_CONTROL_PAD_SKEW_REG        (4)
-#define PHY_CONTROL_PAD_SKEW_VALUE      (0x70)
+#define PHY_CONTROL_PAD_SKEW_VALUE      (0x0700)
 #define PHY_RX_DATA_PAD_SKEW_REG        (5)
 #define PHY_RX_DATA_PAD_SKEW_VALUE      (0x7777)
 #define PHY_TX_DATA_PAD_SKEW_REG        (6)
@@ -126,7 +126,8 @@ extern "C"
                                                                                      
 #define PHY_MMD_DEV_ADDR_02             (2)
 #define PHY_MMD_DEV_ADDR_00             (0)
-                                                        
+#define PHY_MMD_DEV_ADDR_07             (7)   
+    
 /* PHY_basic_Control_register           */ 
 #define PHY_COLLTEST                    (1 << 7 )    /* Collision test enable                          */
 #define PHY_DUPLEX_MODE                 (1 << 8 )    /* Set Duplex Mode                                */
