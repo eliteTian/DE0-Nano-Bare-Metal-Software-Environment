@@ -33,74 +33,25 @@
 #define ALT_RSTMGR_PERMODRST_OFST (0x14)
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
 
+extern UART_INFO_t term0_info;
 
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 int eth_main(alt_eth_emac_instance_t* emac);
-extern UART_INFO_t term0_info;
-ALT_STATUS_CODE socfpga_watchdog_start(ALT_WDOG_TIMER_t tmr_id, ALT_WDOG_RESET_TYPE_t type,  uint32_t val);
+
 void clkMgrTest(void);
 void rstMgrTest(void);
-ALT_STATUS_CODE socfpga_bridge_io(void);
-
-
-ALT_STATUS_CODE socfpga_int_start(void)
-{
-    ALT_STATUS_CODE status = ALT_E_SUCCESS;
-
-    /*
-    // Initialize the global and CPU interrupt items
-    */
-
-    if (status == ALT_E_SUCCESS)
-    {
-        status = alt_int_global_init();
-        if (status != ALT_E_SUCCESS)
-        {
-            ALT_PRINTF("ERROR: alt_int_global_init() failed, %" PRIi32 ".\n", status);
-        }
-    }
-
-    if (status == ALT_E_SUCCESS)
-    {
-        status = alt_int_cpu_init();
-        if (status != ALT_E_SUCCESS)
-        {
-            ALT_PRINTF("ERROR: alt_int_cpu_init() failed, %" PRIi32 ".\n", status);
-        }
-    }
-
-    /*
-    // Enable the CPU and global interrupt
-    */
-
-    if (status == ALT_E_SUCCESS)
-    {
-        status = alt_int_cpu_enable();
-        if (status != ALT_E_SUCCESS)
-        {
-            ALT_PRINTF("ERROR: alt_int_cpu_enable() failed, %" PRIi32 ".\n", status);
-        }
-    }
-
-    if (status == ALT_E_SUCCESS)
-    {
-        status = alt_int_global_enable();
-        if (status != ALT_E_SUCCESS)
-        {
-            ALT_PRINTF("ERROR: alt_int_global_enable() failed, %" PRIi32 ".\n", status);
-        }
-    }
-
-    return status;
-}
 
 static alt_eth_emac_instance_t emac1;
 
 void ledTest(void);
-
 void fpgaTest(void);
 void fpgaCustomTest(void);
+
+ALT_STATUS_CODE socfpga_bridge_io(void);
+ALT_STATUS_CODE socfpga_int_start(void);
+ALT_STATUS_CODE socfpga_watchdog_start(ALT_WDOG_TIMER_t tmr_id, ALT_WDOG_RESET_TYPE_t type,  uint32_t val);
+
 
 int main(void) {
     //set a variable to hold status of each operation
@@ -175,15 +126,14 @@ int main(void) {
     }
     curr_val = alt_wdog_counter_get_current(watchdog);
     ALT_PRINTF("SUCCESS: WATCHDOG current counter value is , %" PRIi32 ".\n", curr_val);
-        
-    //fpgaTest();
+    fpgaCustomTest();      
     clkMgrTest();
     //rstMgrTest();
     curr_val = alt_read_word(0xFFD05000);
 
     ALT_PRINTF("SUCCESS: RST STATUS REGISTER is %" PRIi32 ".\n", curr_val);
     fpgaTest();
-    fpgaCustomTest();
+
     //ledTest();
     
     //return 0;
@@ -773,6 +723,58 @@ void fpgaCustomTest(void){
         mysleep( 1000*1000 );
         printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
     }
+        mysleep( 10000*1000 );
+}
 
+
+ALT_STATUS_CODE socfpga_int_start(void)
+{
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+    /*
+    // Initialize the global and CPU interrupt items
+    */
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_global_init();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_global_init() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_cpu_init();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_cpu_init() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    /*
+    // Enable the CPU and global interrupt
+    */
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_cpu_enable();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_cpu_enable() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_global_enable();
+        if (status != ALT_E_SUCCESS)
+        {
+            ALT_PRINTF("ERROR: alt_int_global_enable() failed, %" PRIi32 ".\n", status);
+        }
+    }
+
+    return status;
 }
 
