@@ -12,6 +12,7 @@
 #include "alt_p2uart.h"
 #include "alt_watchdog.h"
 #include "alt_bridge_manager.h"
+#include "hps_0.h"
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -31,27 +32,6 @@
 //#define ALT_RSTMGR_ADDR (0xFFD05000)
 #define ALT_RSTMGR_PERMODRST_OFST (0x14)
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
-
-
-#define LED_PIO_COMPONENT_TYPE altera_avalon_pio
-#define LED_PIO_COMPONENT_NAME led_pio
-#define LED_PIO_BASE 0x10040
-#define LED_PIO_SPAN 16
-#define LED_PIO_END 0x1004f
-#define LED_PIO_BIT_CLEARING_EDGE_REGISTER 0
-#define LED_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
-#define LED_PIO_CAPTURE 0
-#define LED_PIO_DATA_WIDTH 8
-#define LED_PIO_DO_TEST_BENCH_WIRING 0
-#define LED_PIO_DRIVEN_SIM_VALUE 0
-#define LED_PIO_EDGE_TYPE NONE
-#define LED_PIO_FREQ 50000000
-#define LED_PIO_HAS_IN 0
-#define LED_PIO_HAS_OUT 1
-#define LED_PIO_HAS_TRI 0
-#define LED_PIO_IRQ_TYPE NONE
-#define LED_PIO_RESET_VALUE 0
-
 
 
 void mysleep(uint32_t cycles);
@@ -120,7 +100,7 @@ static alt_eth_emac_instance_t emac1;
 void ledTest(void);
 
 void fpgaTest(void);
-
+void fpgaCustomTest(void);
 
 int main(void) {
     //set a variable to hold status of each operation
@@ -203,9 +183,10 @@ int main(void) {
 
     ALT_PRINTF("SUCCESS: RST STATUS REGISTER is %" PRIi32 ".\n", curr_val);
     fpgaTest();
+    fpgaCustomTest();
     //ledTest();
     
-    return 0;
+    //return 0;
 
     
     //ethernet module test, including init
@@ -499,7 +480,7 @@ void fpgaTest(void){
 	led_mask = 0x01;
 	led_direction = 0; // 0: left to right direction
     //dip_sw_bits = 0;
-	while( loop_count < 60 ) {
+	while( loop_count < 2 ) {
 		printf( "Hufei:You'd be seeing shifting LEDs \n" );
 		// control led
 		*(uint32_t *)h2p_lw_led_addr = ~led_mask; 
@@ -771,3 +752,27 @@ ALT_STATUS_CODE socfpga_bridge_io(void)
     return ALT_E_SUCCESS;
 
 }
+
+
+void fpgaCustomTest(void){
+	uint32_t loop_count;
+
+    uint32_t* h2p_custom_reg_addr;
+
+	h2p_custom_reg_addr =(uint32_t* )( ALT_LWFPGASLVS_OFST  +  CUSTOM_FPGA_REG_0_BASE  );
+
+    printf("Custom reg address is : 0x%08x\r\n", h2p_custom_reg_addr );
+    printf("Custom reg address data is : 0x%08x\r\n", *h2p_custom_reg_addr );
+    *h2p_custom_reg_addr = 0xa5a5a5a5;
+
+    printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
+
+
+    for(loop_count = 0; loop_count != 20; loop_count++) {
+        *h2p_custom_reg_addr = loop_count;
+        mysleep( 1000*1000 );
+        printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
+    }
+
+}
+
