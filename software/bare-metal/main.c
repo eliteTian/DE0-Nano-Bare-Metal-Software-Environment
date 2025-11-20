@@ -736,19 +736,44 @@ void fpgaCustomTest(void){
     uint8_t wdata;
     uint8_t addr;
     uint8_t index;
-    for(index = 0; index < 32; index++) {
+    uint32_t gpr;
+    for(index = 0; index < 6; index++) {
         addr = index; 
-        wdata = index;
-        writeRam(addr, wdata);
+        wdata = 32-index;
+        writeRamSource(addr, wdata);
     }
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < 6; index++) {
         addr = index; 
-        readRam(addr,&rdata);
+        readRamSource(addr,&rdata);
         printf("Custom reg address data is after writing : 0x%02x\r\n", rdata );
     }
 
+    for(index = 0; index < 6; index++) {
+        addr = index; 
+        wdata = 32-index;
+        writeRamSink(addr, wdata);
+    }
+    for(index = 0; index < 6; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        printf("Custom reg address data is after writing : 0x%02x\r\n", rdata );
+    }
+
+    readGPRSource(&gpr);
+    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
+    writeGPRSource(0x26571489);
+    readGPRSource(&gpr);
+    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
+
+    readGPRSink(&gpr);
+    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
+    writeGPRSink(0x26571489);
+    readGPRSink(&gpr);
+    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
+
+
         
-    mysleep( 30000*1000 );
+    mysleep( 80000*1000 );
 }
 
 

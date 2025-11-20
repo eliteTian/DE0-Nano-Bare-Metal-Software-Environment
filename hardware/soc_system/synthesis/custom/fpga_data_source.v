@@ -60,6 +60,7 @@ wire        pend    = STAT[0];
 reg[7:0] mem[0:31];
 reg[4:0] addr;
 reg[7:0] rdata;
+reg[7:0] rdata_w;
 reg      rvalid;
 
 reg [7:0]  axis4_m_tdata_r;
@@ -84,6 +85,8 @@ always@(posedge clk) begin
     end
 end
 
+assign rdata_w = mem[addr];
+
 reg[1:0] state;
 always@(posedge clk, negedge reset_n) begin
     if(!reset_n) begin
@@ -95,12 +98,16 @@ always@(posedge clk, negedge reset_n) begin
         rd_en <= 1'b0;
         wr_en <= 1'b0;
         clear_cmd <= 1'b0;
+        axis4_m_tlast_r <= 1'b0;
+
     end else begin
         case(state)
             2'b00: begin //IDLE state, awaiting command, wr cmd can be done in a single cycle, rd command has to wait for completion
                 rd_en <= 1'b0;
                 wr_en <= 1'b0;
                 clear_cmd <= 1'b0;
+                axis4_m_tlast_r <= 1'b0;
+                
                 if(cmd_valid) begin
                     STAT <= 32'b1;
                     state <= 2'b01;
@@ -117,6 +124,7 @@ always@(posedge clk, negedge reset_n) begin
                     if(cmd_type == 2'b10) begin //dump block ram from addr 0 via axi4 st if
                         addr <= 0;
                         state <= 2'b10;
+                        axis4_m_tvalid_r <= 1'b1;
                     end
                 end
             end
@@ -131,11 +139,15 @@ always@(posedge clk, negedge reset_n) begin
             end
 
             2'b10: begin //to be studied
-                axis4_m_tvalid_r <= 1'b1;
-                axis4_m_tdata_r <= rdata;
-                if(axis4_m_tready) begin
-                    rd_en <= 1'b1;
+                if(addr!=5'h1f) begin
+                    if(axis4_m_tready) begin
+                        addr <= addr + 1;
+                    end
+                end else begin
                     state <= 2'b00;
+                    axis4_m_tvalid_r <= 1'b0;
+                    axis4_m_tlast_r <= 1'b1;
+
                 end
             end
         endcase
@@ -143,9 +155,9 @@ always@(posedge clk, negedge reset_n) begin
 end
                     
 
-assign axis4_m_tdata = rdata;
-assign axis4_m_tvalid = rvalid;
-assign axis4_m_tlast = 1'b1;
+assign axis4_m_tdata = rdata_w;
+assign axis4_m_tvalid = axis4_m_tvalid_r;
+assign axis4_m_tlast = axis4_m_tlast_r;
                 
 
 endmodule

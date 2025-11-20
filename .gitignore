@@ -6,4 +6,6 @@
 main.bin
 *.axf
 *.txt
-*~
+*tcl~
+*.flock
+

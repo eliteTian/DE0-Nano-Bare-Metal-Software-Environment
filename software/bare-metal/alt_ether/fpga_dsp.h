@@ -28,8 +28,18 @@
 #define  SRC_STATUS_PEND_OFST    0
 #define  SRC_STATUS_RDATA_OFST   8
 
-void writeRam(uint8_t addr, uint8_t data);
-void readRam(uint8_t addr, uint8_t* rdata);
+#define  SRC_GPR_OFST 0x8
+
+void writeRamSource(uint8_t addr, uint8_t data);
+void readRamSource(uint8_t addr, uint8_t* rdata);
+void writeGPRSource(uint32_t data);
+void readGPRSource(uint32_t* data);
+
+
+void writeRamSink(uint8_t addr, uint8_t data);
+void readRamSink(uint8_t addr, uint8_t* rdata);
+void writeGPRSink(uint32_t data);
+void readGPRSink(uint32_t* data);
 
 
 

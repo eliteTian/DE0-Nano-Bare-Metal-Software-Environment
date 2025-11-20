@@ -118,6 +118,7 @@ always@(posedge clk, negedge reset_n) begin
             end
             2'b01: begin
                 clear_cmd <= 1'b0;
+                rd_en <= 1'b0;
                 if(rvalid==1'b1) begin
                     STAT[0] <= 1'b0;
                     STAT[15:8] <= rdata;

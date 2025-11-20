@@ -54,26 +54,15 @@
 #define ONCHIP_MEMORY2_0_MEMORY_INFO_MEM_INIT_FILENAME soc_system_onchip_memory2_0
 
 /*
- * Macros for device 'fpga_data_sink_0', class 'fpga_data_sink'
- * The macros are prefixed with 'FPGA_DATA_SINK_0_'.
- * The prefix is the slave descriptor.
- */
-#define FPGA_DATA_SINK_0_COMPONENT_TYPE fpga_data_sink
-#define FPGA_DATA_SINK_0_COMPONENT_NAME fpga_data_sink_0
-#define FPGA_DATA_SINK_0_BASE 0x0
-#define FPGA_DATA_SINK_0_SPAN 16
-#define FPGA_DATA_SINK_0_END 0xf
-
-/*
  * Macros for device 'dipsw_pio', class 'altera_avalon_pio'
  * The macros are prefixed with 'DIPSW_PIO_'.
  * The prefix is the slave descriptor.
  */
 #define DIPSW_PIO_COMPONENT_TYPE altera_avalon_pio
 #define DIPSW_PIO_COMPONENT_NAME dipsw_pio
-#define DIPSW_PIO_BASE 0x10
+#define DIPSW_PIO_BASE 0x0
 #define DIPSW_PIO_SPAN 16
-#define DIPSW_PIO_END 0x1f
+#define DIPSW_PIO_END 0xf
 #define DIPSW_PIO_BIT_CLEARING_EDGE_REGISTER 0
 #define DIPSW_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define DIPSW_PIO_CAPTURE 0
@@ -87,6 +76,17 @@
 #define DIPSW_PIO_HAS_TRI 0
 #define DIPSW_PIO_IRQ_TYPE NONE
 #define DIPSW_PIO_RESET_VALUE 0
+
+/*
+ * Macros for device 'fpga_data_sink_0', class 'fpga_data_sink'
+ * The macros are prefixed with 'FPGA_DATA_SINK_0_'.
+ * The prefix is the slave descriptor.
+ */
+#define FPGA_DATA_SINK_0_COMPONENT_TYPE fpga_data_sink
+#define FPGA_DATA_SINK_0_COMPONENT_NAME fpga_data_sink_0
+#define FPGA_DATA_SINK_0_BASE 0x10
+#define FPGA_DATA_SINK_0_SPAN 16
+#define FPGA_DATA_SINK_0_END 0x1f
 
 /*
  * Macros for device 'fpga_data_source_0', class 'fpga_data_source'
@@ -110,7 +110,7 @@
 #define SYSID_QSYS_SPAN 8
 #define SYSID_QSYS_END 0x10007
 #define SYSID_QSYS_ID 2899645186
-#define SYSID_QSYS_TIMESTAMP 1763592226
+#define SYSID_QSYS_TIMESTAMP 1763594500
 
 /*
  * Macros for device 'led_pio', class 'altera_avalon_pio'
