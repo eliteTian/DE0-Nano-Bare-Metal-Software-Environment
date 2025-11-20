@@ -54,15 +54,15 @@
 #define ONCHIP_MEMORY2_0_MEMORY_INFO_MEM_INIT_FILENAME soc_system_onchip_memory2_0
 
 /*
- * Macros for device 'custom_fpga_reg_0', class 'custom_fpga_reg'
- * The macros are prefixed with 'CUSTOM_FPGA_REG_0_'.
+ * Macros for device 'fpga_data_sink_0', class 'fpga_data_sink'
+ * The macros are prefixed with 'FPGA_DATA_SINK_0_'.
  * The prefix is the slave descriptor.
  */
-#define CUSTOM_FPGA_REG_0_COMPONENT_TYPE custom_fpga_reg
-#define CUSTOM_FPGA_REG_0_COMPONENT_NAME custom_fpga_reg_0
-#define CUSTOM_FPGA_REG_0_BASE 0x0
-#define CUSTOM_FPGA_REG_0_SPAN 16
-#define CUSTOM_FPGA_REG_0_END 0xf
+#define FPGA_DATA_SINK_0_COMPONENT_TYPE fpga_data_sink
+#define FPGA_DATA_SINK_0_COMPONENT_NAME fpga_data_sink_0
+#define FPGA_DATA_SINK_0_BASE 0x0
+#define FPGA_DATA_SINK_0_SPAN 16
+#define FPGA_DATA_SINK_0_END 0xf
 
 /*
  * Macros for device 'dipsw_pio', class 'altera_avalon_pio'
@@ -89,6 +89,17 @@
 #define DIPSW_PIO_RESET_VALUE 0
 
 /*
+ * Macros for device 'fpga_data_source_0', class 'fpga_data_source'
+ * The macros are prefixed with 'FPGA_DATA_SOURCE_0_'.
+ * The prefix is the slave descriptor.
+ */
+#define FPGA_DATA_SOURCE_0_COMPONENT_TYPE fpga_data_source
+#define FPGA_DATA_SOURCE_0_COMPONENT_NAME fpga_data_source_0
+#define FPGA_DATA_SOURCE_0_BASE 0x20
+#define FPGA_DATA_SOURCE_0_SPAN 16
+#define FPGA_DATA_SOURCE_0_END 0x2f
+
+/*
  * Macros for device 'sysid_qsys', class 'altera_avalon_sysid_qsys'
  * The macros are prefixed with 'SYSID_QSYS_'.
  * The prefix is the slave descriptor.
@@ -99,7 +110,7 @@
 #define SYSID_QSYS_SPAN 8
 #define SYSID_QSYS_END 0x10007
 #define SYSID_QSYS_ID 2899645186
-#define SYSID_QSYS_TIMESTAMP 1763502914
+#define SYSID_QSYS_TIMESTAMP 1763592226
 
 /*
  * Macros for device 'led_pio', class 'altera_avalon_pio'

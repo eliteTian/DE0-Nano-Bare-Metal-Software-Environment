@@ -13,6 +13,7 @@
 #include "alt_watchdog.h"
 #include "alt_bridge_manager.h"
 #include "hps_0.h"
+#include "fpga_dsp.h"
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -705,6 +706,7 @@ ALT_STATUS_CODE socfpga_bridge_io(void)
 
 
 void fpgaCustomTest(void){
+    /* initial raw register test
 	uint32_t loop_count;
 
     uint32_t* h2p_custom_reg_addr;
@@ -718,12 +720,35 @@ void fpgaCustomTest(void){
     printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
 
 
-    for(loop_count = 0; loop_count != 20; loop_count++) {
-        *h2p_custom_reg_addr = loop_count;
+    for(loop_count = 0; loop_count != 8; loop_count++) {
+        *h2p_custom_reg_addr++ = loop_count|loop_count<<24|loop_count<<16|loop_count<<8;
         mysleep( 1000*1000 );
-        printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
     }
-        mysleep( 10000*1000 );
+
+    for(loop_count = 0; loop_count != 8; loop_count++) {
+        h2p_custom_reg_addr--;
+        printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
+        mysleep( 1000*1000 );
+    }
+    */
+
+    uint8_t rdata = 0;
+    uint8_t wdata;
+    uint8_t addr;
+    uint8_t index;
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        wdata = index;
+        writeRam(addr, wdata);
+    }
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRam(addr,&rdata);
+        printf("Custom reg address data is after writing : 0x%02x\r\n", rdata );
+    }
+
+        
+    mysleep( 30000*1000 );
 }
 
 
