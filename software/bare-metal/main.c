@@ -38,12 +38,14 @@ extern UART_INFO_t term0_info;
 
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
+#ifdef ETH_TEST
+static alt_eth_emac_instance_t emac1;
 int eth_main(alt_eth_emac_instance_t* emac);
+#endif
 
 void clkMgrTest(void);
 void rstMgrTest(void);
 
-static alt_eth_emac_instance_t emac1;
 
 void ledTest(void);
 void fpgaTest(void);
@@ -133,7 +135,7 @@ int main(void) {
     curr_val = alt_read_word(0xFFD05000);
 
     ALT_PRINTF("SUCCESS: RST STATUS REGISTER is %" PRIi32 ".\n", curr_val);
-    fpgaTest();
+    //fpgaTest();
 
     //ledTest();
     
@@ -141,7 +143,9 @@ int main(void) {
 
     
     //ethernet module test, including init
+#ifdef ETH_TEST
     eth_main(&emac1);
+#endif
 
     if (status == ALT_E_SUCCESS)
     {
@@ -737,27 +741,6 @@ void fpgaCustomTest(void){
     uint8_t addr;
     uint8_t index;
     uint32_t gpr;
-    for(index = 0; index < 6; index++) {
-        addr = index; 
-        wdata = 32-index;
-        writeRamSource(addr, wdata);
-    }
-    for(index = 0; index < 6; index++) {
-        addr = index; 
-        readRamSource(addr,&rdata);
-        printf("Custom reg address data is after writing : 0x%02x\r\n", rdata );
-    }
-
-    for(index = 0; index < 6; index++) {
-        addr = index; 
-        wdata = 32-index;
-        writeRamSink(addr, wdata);
-    }
-    for(index = 0; index < 6; index++) {
-        addr = index; 
-        readRamSink(addr,&rdata);
-        printf("Custom reg address data is after writing : 0x%02x\r\n", rdata );
-    }
 
     readGPRSource(&gpr);
     printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
@@ -771,7 +754,61 @@ void fpgaCustomTest(void){
     readGPRSink(&gpr);
     printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
 
+    
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        wdata = index;
+        writeRamSource(addr, wdata);
+    }
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSource(addr,&rdata);
+        if(rdata!=index) {
+            printf("Source RAM data mismatch: 0x%02x\r\n", rdata );
+        }
+    }
 
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        wdata = 32-index;
+        writeRamSink(addr, wdata);
+    }
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        if(rdata!=32-index) {
+            //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
+            printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
+        }
+    }
+
+    dumpRamSink();
+    dumpRamSource();
+    
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        printf("Sink ram after dump writing : 0x%02x\r\n", rdata );
+    }
+
+    
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        wdata = index;
+        writeRamSink(addr, wdata);
+    }
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        if(rdata!=index) {
+            //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
+            printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
+        }
+    }
+
+
+
+    printf("TEST DONE\r\n");
         
     mysleep( 80000*1000 );
 }

@@ -43,8 +43,7 @@ wire        pend    = STAT[0];
                 reg3 <= avs_writedata;
               default: ;
             endcase
-          end
-          if(clear_cmd) begin // clear cmd valid by HW.
+        end else if(clear_cmd) begin // clear cmd valid by HW.
               CTRL <= CTRL & 32'hFFFFFFFE;
           end
       end
@@ -64,14 +63,19 @@ reg      rvalid;
 
 
 reg        axis4_s_tready_r;
+reg[7:0]   axis4_s_tdata_r;
+
 reg        rd_en;
 reg        wr_en;
 reg        clear_cmd;
 
 always@(posedge clk) begin
     if(wr_en) begin
-        mem[addr] <= cmd_data;
-        rvalid <= 1'b0;
+        if(state==2'b10) begin
+            mem[addr] <= axis4_s_tdata_r;
+        end else begin
+            mem[addr] <= cmd_data;
+        end
     end else begin
         if(rd_en) begin
             rdata <= mem[addr];
@@ -87,10 +91,10 @@ always@(posedge clk, negedge reset_n) begin
     if(!reset_n) begin
         state <= 2'b00;
         STAT <= 0;
-        axis4_s_tready_r <= 1'b1;    
         rd_en <= 1'b0;
         wr_en <= 1'b0;
         clear_cmd <= 1'b0;
+        axis4_s_tdata_r <= 0;
     end else begin
         case(state)
             2'b00: begin //IDLE state, awaiting command, wr cmd can be done in a single cycle, rd command has to wait for completion
@@ -110,7 +114,7 @@ always@(posedge clk, negedge reset_n) begin
                         rd_en <= 1'b1;
                         state <= 2'b01; //wait for rvalid
                     end
-                    if(cmd_type == 2'b10) begin //dump block ram from addr 0 via axi4 st if
+                    if(cmd_type == 2'b10) begin //receive dump block ram from addr 0 via axi4 st if
                         addr <= 0;
                         state <= 2'b10;
                     end
@@ -126,13 +130,29 @@ always@(posedge clk, negedge reset_n) begin
                 end
             end
 
-            2'b10: begin //to be studied
-                axis4_s_tready_r <= 1'b1;
+            2'b10: begin //getting data from axis4 master.
+                clear_cmd <= 1'b0;
+                if(addr!=5'h1f) begin
+                    if(axis4_s_tvalid & axis4_s_tready) begin
+                        wr_en <= 1'b1;
+                        addr <= wr_en? addr + 1:addr;
+                        axis4_s_tdata_r <= axis4_s_tdata;
+                    end else begin
+                        wr_en <= 1'b0;
+                    end
+                end else begin
+                    wr_en <= 1'b0;
+                    state <= 2'b00;
+                    axis4_s_tready_r <= 1'b0;
+                    STAT[0] <= 1'b0;
+                end
+
+
             end
         endcase
     end
 end
                     
-assign axis4_s_tready = axis4_s_tready_r; 
+assign axis4_s_tready = 1'b1; 
 
 endmodule

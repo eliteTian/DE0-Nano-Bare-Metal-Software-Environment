@@ -60,7 +60,7 @@ wire        pend    = STAT[0];
 reg[7:0] mem[0:31];
 reg[4:0] addr;
 reg[7:0] rdata;
-reg[7:0] rdata_w;
+wire[7:0] rdata_w;
 reg      rvalid;
 
 reg [7:0]  axis4_m_tdata_r;

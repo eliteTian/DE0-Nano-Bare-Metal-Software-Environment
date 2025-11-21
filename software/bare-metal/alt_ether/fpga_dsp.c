@@ -1,4 +1,3 @@
-#include "hps_0.h"
 #include "fpga_dsp.h"
 
 void writeRamSource(uint8_t addr, uint8_t data){
@@ -72,6 +71,7 @@ void readGPRSource(uint32_t* data){
     *data = *reg_addr;
 }
 
+
 void writeGPRSink(uint32_t data){
     volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_GPR_OFST);
     *reg_addr = data;
@@ -83,6 +83,23 @@ void readGPRSink(uint32_t* data){
 }
 
 
+void dumpRamSource(void) {
+    uint32_t reg_val = 0;
+    volatile uint32_t* reg_addr;
+    reg_val |= 0x2<<SRC_CTRL_CMD_TYPE_OFST;
+    reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_CTRL_OFST);
+    *reg_addr = reg_val;
+}
+
+void dumpRamSink(void) {
+    uint32_t reg_val = 0;
+    volatile uint32_t* reg_addr;
+    reg_val |= 0x2<<SRC_CTRL_CMD_TYPE_OFST;
+    reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_CTRL_OFST);
+    *reg_addr = reg_val;
+}
 
 
 

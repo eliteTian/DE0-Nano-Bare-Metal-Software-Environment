@@ -6,6 +6,12 @@
 main.bin
 *.axf
 *.txt
-*tcl~
+*.tcl~
 *.flock
+*.cdb
+*.hdb
+*.rpt
+*.rcfdb
+hardware/db/
+hardware/incremental_db/
 
