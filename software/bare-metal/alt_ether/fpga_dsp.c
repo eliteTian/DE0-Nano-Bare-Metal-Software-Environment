@@ -1,5 +1,18 @@
 #include "fpga_dsp.h"
 
+static uint8_t pseudoRand(uint8_t seed)
+{
+    uint8_t lfsr = seed ? seed : 1; // avoid zero lockup
+    uint8_t bit;
+
+    // Perform 8 steps to scramble thoroughly
+    for(int i=0;i<8;i++) {
+        bit = ((lfsr >> 7) ^ (lfsr >> 5) ^ (lfsr >> 4) ^ (lfsr >> 3)) & 1;
+        lfsr = (lfsr << 1) | bit;
+    }
+    return lfsr;
+}
+
 void writeRamSource(uint8_t addr, uint8_t data){
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
@@ -72,6 +85,24 @@ void readGPRSource(uint32_t* data){
 }
 
 
+void readCTRLSource(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
+    *data = *reg_addr;
+}
+
+void readCTRLSink(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_CTRL_OFST);
+    *data = *reg_addr;
+}
+
+
+
+void readDbgSource(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_DBG_OFST);
+    *data = *reg_addr;
+}
+
+
 void writeGPRSink(uint32_t data){
     volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_GPR_OFST);
     *reg_addr = data;
@@ -82,13 +113,19 @@ void readGPRSink(uint32_t* data){
     *data = *reg_addr;
 }
 
+void readDbgSink(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_DBG_OFST);
+    *data = *reg_addr;
+}
+
+
 
 void dumpRamSource(void) {
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
     reg_val |= 0x2<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
-    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_CTRL_OFST);
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
     *reg_addr = reg_val;
 }
 
@@ -101,6 +138,103 @@ void dumpRamSink(void) {
     *reg_addr = reg_val;
 }
 
+
+void gprTest(void) {
+    uint32_t gpr;
+    readGPRSource(&gpr);
+    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
+    writeGPRSource(0x26571489);
+    readGPRSource(&gpr);
+    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
+
+    readGPRSink(&gpr);
+    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
+    writeGPRSink(0x26571489);
+    readGPRSink(&gpr);
+    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
+}
+
+void ramWriteTestSrc(void) {
+    uint8_t index;
+    uint8_t rdata = 0;
+    uint8_t wdata;
+    uint8_t addr;
+
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        wdata = pseudoRand(index);
+        writeRamSource(addr, wdata);
+    }
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSource(addr,&rdata);
+        if(rdata!=pseudoRand(index)) {
+            printf("Source RAM data mismatch: 0x%02x\r\n", rdata );
+        }
+    }
+
+}
+
+void ramWriteTestSnk(void) {
+    uint8_t index;
+    uint8_t rdata = 0;
+    uint8_t wdata;
+    uint8_t addr;
+
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        wdata = 32-index;
+        writeRamSink(addr, wdata);
+    }
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        if(rdata!=32-index) {
+            //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
+            printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
+        }
+    }
+
+}
+
+void ramReadSnk(void) {
+    uint8_t index;
+    uint8_t rdata = 0;
+    uint8_t addr;
+
+    for(index = 0; index < 32; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        printf("Sink RAM data read is : 0x%02x\r\n", rdata );     
+        //if(rdata!=32-index) {
+        //    //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
+        //    printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
+        //}
+    }
+
+}
+
+
+
+
+void dspTest(void) {
+    uint32_t data;
+    gprTest(); //general purpose register test. simple wr and rd
+    ramReadSnk();
+    ramWriteTestSrc();// fill up source ram with data and do a read back test 
+    dumpRamSink(); // set up sink ram state machine in  dump state, expecting data from st IF
+    readCTRLSink(&data);
+    printf("After arming sink for ST transfer CTRL register is : 0x%08x\r\n", data );
+    readDbgSink(&data);
+    printf("After arming sink for ST transfer Debug register is : 0x%08x\r\n", data );
+    dumpRamSource(); //start master axi st transfer.
+                     //
+    readDbgSource(&data);
+
+    printf("After starting ST transfer : 0x%08x\r\n", data );
+    ramReadSnk();
+    
+}
 
 
 

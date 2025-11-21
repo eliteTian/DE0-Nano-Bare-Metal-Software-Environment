@@ -16,22 +16,21 @@ module fpga_data_sink (
 );
 
 wire              clk_en;
-reg     [  31: 0] CTRL, STAT, reg2, reg3;
-
+reg     [31:0] CTRL, STAT, reg2;
+wire[31:0]  dbg_reg;
 wire        cmd_valid = CTRL[0]; // 1 means a pending cmd
-wire        cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
+wire[1:0]   cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
 wire[4:0]   cmd_addr = CTRL[12:8];
 wire[7:0]   cmd_data = CTRL[23:16];
+wire        cmd_clear_cnt = CTRL[31];
 
 wire        pend    = STAT[0];
 
 
-  assign clk_en = 1;
   always @(posedge clk or negedge  reset_n) begin
         if (reset_n == 0) begin
           CTRL <= 0;
           reg2 <= 0;
-          reg3 <= 0;
         end else begin
           if (avs_chipselect && ~avs_write_n) begin
             case( avs_address)
@@ -39,22 +38,23 @@ wire        pend    = STAT[0];
                 CTRL <= avs_writedata;
               2'b10:
                 reg2 <= avs_writedata;
-              2'b11:
-                reg3 <= avs_writedata;
               default: ;
             endcase
         end else if(clear_cmd) begin // clear cmd valid by HW.
               CTRL <= CTRL & 32'hFFFFFFFE;
-          end
+        end else if(cmd_clear_cnt) begin
+              CTRL <= CTRL & 32'hEFFFFFFF;
+        end
+
       end
 
     end
 
 
   assign  avs_readdata =  avs_address==0? CTRL: 
-                     avs_address==2'b01 ? STAT:
-                     avs_address==2'b10 ? reg2: reg3;
-
+                          avs_address==2'b01 ? STAT:
+                          avs_address==2'b10 ? reg2:
+                          avs_address==2'b11 ? dbg_reg: 32'hFFFFFFFF;
 
 reg[7:0] mem[0:31];
 reg[4:0] addr;
@@ -132,7 +132,7 @@ always@(posedge clk, negedge reset_n) begin
 
             2'b10: begin //getting data from axis4 master.
                 clear_cmd <= 1'b0;
-                if(addr!=5'h1f) begin
+                if(~&addr) begin //when addr is all 1's
                     if(axis4_s_tvalid & axis4_s_tready) begin
                         wr_en <= 1'b1;
                         addr <= wr_en? addr + 1:addr;
@@ -154,5 +154,24 @@ always@(posedge clk, negedge reset_n) begin
 end
                     
 assign axis4_s_tready = 1'b1; 
+
+reg[7:0] cnt;
+ 
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        cnt <= 0;
+    end else begin
+        if(cmd_clear_cnt) begin
+            cnt <= 0;
+        end else begin
+            cnt <= axis4_s_tvalid&axis4_s_tready? cnt+1: cnt;
+        end
+    end
+end
+
+assign dbg_reg[7:0] = cnt;
+assign dbg_reg[9:8] = state;
+assign dbg_reg[20:16] = addr;
+
 
 endmodule

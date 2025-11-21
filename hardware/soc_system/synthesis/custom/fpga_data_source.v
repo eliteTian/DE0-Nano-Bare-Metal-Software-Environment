@@ -16,45 +16,48 @@ module fpga_data_source (
 );
 
 wire              clk_en;
-reg     [  31: 0] CTRL, STAT, reg2, reg3;
+reg [31:0] CTRL, STAT, reg2;
+wire[31:0]  dbg_reg;
+
 
 wire        cmd_valid = CTRL[0]; // 1 means a pending cmd
-wire        cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
+wire[1:0]   cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
 wire[4:0]   cmd_addr = CTRL[12:8];
 wire[7:0]   cmd_data = CTRL[23:16];
+wire        cmd_clear_cnt = CTRL[31];
 
 wire        pend    = STAT[0];
 
 
-  assign clk_en = 1;
-  always @(posedge clk or negedge  reset_n) begin
-        if (reset_n == 0) begin
-          CTRL <= 0;
-          reg2 <= 0;
-          reg3 <= 0;
+always @(posedge clk or negedge  reset_n) begin
+    if (reset_n == 0) begin
+        CTRL <= 0;
+        reg2 <= 0;
+    end else begin
+        if (avs_chipselect && ~avs_write_n) begin
+          case( avs_address)
+            2'b00:
+              CTRL <= avs_writedata;
+            2'b10:
+              reg2 <= avs_writedata;
+            default: ;
+          endcase
         end else begin
-          if (avs_chipselect && ~avs_write_n) begin
-            case( avs_address)
-              2'b00:
-                CTRL <= avs_writedata;
-              2'b10:
-                reg2 <= avs_writedata;
-              2'b11:
-                reg3 <= avs_writedata;
-              default: ;
-            endcase
-          end
-          if(clear_cmd) begin // clear cmd valid by HW.
-              CTRL <= CTRL & 32'hFFFFFFFE;
-          end
-      end
-
+            if(clear_cmd) begin // clear cmd valid by HW.
+                CTRL <= CTRL & 32'hFFFFFFFE;
+            end
+            if(cmd_clear_cnt) begin //clear bit 31, cmd_clear_cnt by HW
+                CTRL <= CTRL & 32'hEFFFFFFF;
+            end
+        end
     end
 
+  end
 
-  assign  avs_readdata =  avs_address==0? CTRL: 
-                     avs_address==2'b01 ? STAT:
-                     avs_address==2'b10 ? reg2: reg3;
+assign  avs_readdata =  avs_address==0? CTRL: 
+                        avs_address==2'b01 ? STAT:
+                        avs_address==2'b10 ? reg2: 
+                        avs_address==2'b11 ? dbg_reg : 32'hFFFFFFFF;
 
 
 reg[7:0] mem[0:31];
@@ -110,23 +113,21 @@ always@(posedge clk, negedge reset_n) begin
                 
                 if(cmd_valid) begin
                     STAT <= 32'b1;
-                    state <= 2'b01;
                     addr <= cmd_addr;
                     clear_cmd <= 1'b1;
                     if(cmd_type == 2'b01) begin // write to ram
                         wr_en <= 1'b1;
                         state <= 2'b00;
-                    end 
-                    if(cmd_type == 2'b00) begin //read from ram
+                    end else if(cmd_type == 2'b00) begin //read from ram
                         rd_en <= 1'b1;
                         state <= 2'b01; //wait for rvalid
-                    end
-                    if(cmd_type == 2'b10) begin //dump block ram from addr 0 via axi4 st if
+                    end else if(cmd_type == 2'b10) begin //dump block ram from addr 0 via axi4 st if
                         addr <= 0;
                         state <= 2'b10;
                         axis4_m_tvalid_r <= 1'b1;
                     end
                 end
+
             end
             2'b01: begin
                 clear_cmd <= 1'b0;
@@ -139,7 +140,7 @@ always@(posedge clk, negedge reset_n) begin
             end
 
             2'b10: begin //to be studied
-                if(addr!=5'h1f) begin
+                if(~&addr) begin //addr is not all fs.
                     if(axis4_m_tready) begin
                         addr <= addr + 1;
                     end
@@ -147,9 +148,9 @@ always@(posedge clk, negedge reset_n) begin
                     state <= 2'b00;
                     axis4_m_tvalid_r <= 1'b0;
                     axis4_m_tlast_r <= 1'b1;
-
                 end
             end
+            
         endcase
     end
 end
@@ -158,6 +159,23 @@ end
 assign axis4_m_tdata = rdata_w;
 assign axis4_m_tvalid = axis4_m_tvalid_r;
 assign axis4_m_tlast = axis4_m_tlast_r;
-                
+
+reg[7:0] cnt;
+ 
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        cnt <= 0;
+    end else begin
+        if(cmd_clear_cnt) begin
+            cnt <= 0;
+        end else begin
+            cnt <= axis4_m_tvalid_r&axis4_m_tready? cnt+1: cnt;
+        end
+    end
+end
+
+assign dbg_reg[7:0] = cnt;
+assign dbg_reg[9:8] = state;
+assign dbg_reg[20:16] = addr;
 
 endmodule

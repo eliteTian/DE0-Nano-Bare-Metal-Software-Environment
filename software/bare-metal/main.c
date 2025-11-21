@@ -35,6 +35,8 @@
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
 
 extern UART_INFO_t term0_info;
+extern void dspTest(void);
+
 
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
@@ -736,76 +738,8 @@ void fpgaCustomTest(void){
     }
     */
 
-    uint8_t rdata = 0;
-    uint8_t wdata;
-    uint8_t addr;
-    uint8_t index;
-    uint32_t gpr;
 
-    readGPRSource(&gpr);
-    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
-    writeGPRSource(0x26571489);
-    readGPRSource(&gpr);
-    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
-
-    readGPRSink(&gpr);
-    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
-    writeGPRSink(0x26571489);
-    readGPRSink(&gpr);
-    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
-
-    
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        wdata = index;
-        writeRamSource(addr, wdata);
-    }
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        readRamSource(addr,&rdata);
-        if(rdata!=index) {
-            printf("Source RAM data mismatch: 0x%02x\r\n", rdata );
-        }
-    }
-
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        wdata = 32-index;
-        writeRamSink(addr, wdata);
-    }
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        readRamSink(addr,&rdata);
-        if(rdata!=32-index) {
-            //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
-            printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
-        }
-    }
-
-    dumpRamSink();
-    dumpRamSource();
-    
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        readRamSink(addr,&rdata);
-        printf("Sink ram after dump writing : 0x%02x\r\n", rdata );
-    }
-
-    
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        wdata = index;
-        writeRamSink(addr, wdata);
-    }
-    for(index = 0; index < 32; index++) {
-        addr = index; 
-        readRamSink(addr,&rdata);
-        if(rdata!=index) {
-            //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
-            printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
-        }
-    }
-
+    dspTest();
 
 
     printf("TEST DONE\r\n");

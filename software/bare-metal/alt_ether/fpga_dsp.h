@@ -7,16 +7,17 @@
 #include "socal/socal.h"
 #include "hps_0.h"
 
-#define  SRC_CTRL_OFST      0x0
-#define  SRC_CTRL_CMD_VALID  0x1<<0
-#define  SRC_CTRL_CMD_TYPE   0x3<<1
-#define  SRC_CTRL_CMD_ADDR   0x1F<<8
-#define  SRC_CTRL_CMD_DATA   0xFF<<16
+#define  SRC_CTRL_OFST                  0x0
+#define  SRC_CTRL_CMD_VALID             0x1<<0
+#define  SRC_CTRL_CMD_TYPE              0x3<<1
+#define  SRC_CTRL_CMD_ADDR              0x1F<<8
+#define  SRC_CTRL_CMD_DATA              0xFF<<16
 
-#define  SRC_CTRL_CMD_VALID_OFST  0
-#define  SRC_CTRL_CMD_TYPE_OFST   1
-#define  SRC_CTRL_CMD_ADDR_OFST   8
-#define  SRC_CTRL_CMD_DATA_OFST   16
+#define  SRC_CTRL_CMD_VALID_OFST        0
+#define  SRC_CTRL_CMD_TYPE_OFST         1
+#define  SRC_CTRL_CMD_ADDR_OFST         8
+#define  SRC_CTRL_CMD_DATA_OFST         16
+#define  SRC_CTRL_CMD_CLR_CNT_OFST      31
 
 
 
@@ -29,19 +30,21 @@
 #define  SRC_STATUS_RDATA_OFST   8
 
 #define  SRC_GPR_OFST 0x8
+#define  SRC_DBG_OFST 0xC
 
 void writeRamSource(uint8_t addr, uint8_t data);
 void readRamSource(uint8_t addr, uint8_t* rdata);
 void writeGPRSource(uint32_t data);
 void readGPRSource(uint32_t* data);
 void dumpRamSource(void);
-
+void readDbgSource(uint32_t* data);
 
 void writeRamSink(uint8_t addr, uint8_t data);
 void readRamSink(uint8_t addr, uint8_t* rdata);
 void writeGPRSink(uint32_t data);
 void readGPRSink(uint32_t* data);
 void dumpRamSink(void);
+void readDbgSink(uint32_t* data);
 
 
 
