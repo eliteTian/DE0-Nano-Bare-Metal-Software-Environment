@@ -1,17 +1,17 @@
-Fitter Status : Successful - Fri Nov 21 18:40:06 2025
+Fitter Status : Successful - Sat Nov 22 15:22:23 2025
 Quartus Prime Version : 17.0.0 Build 595 04/25/2017 SJ Lite Edition
 Revision Name : soc_system
 Top-level Entity Name : ghrd
 Family : Cyclone V
 Device : 5CSEMA4U23C6
 Timing Models : Final
-Logic utilization (in ALMs) : 3,323 / 15,880 ( 21 % )
-Total registers : 5170
+Logic utilization (in ALMs) : 3,359 / 15,880 ( 21 % )
+Total registers : 5287
 Total pins : 230 / 314 ( 73 % )
 Total virtual pins : 0
 Total block memory bits : 527,104 / 2,764,800 ( 19 % )
 Total RAM Blocks : 71 / 270 ( 26 % )
-Total DSP Blocks : 0 / 84 ( 0 % )
+Total DSP Blocks : 5 / 84 ( 6 % )
 Total HSSI RX PCSs : 0
 Total HSSI PMA RX Deserializers : 0
 Total HSSI TX PCSs : 0
