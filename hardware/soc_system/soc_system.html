@@ -67,7 +67,7 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
   </table>
   <table class="blueBar">
    <tr>
-    <td class="l">2025.11.21.14:42:01</td>
+    <td class="l">2025.11.21.18:27:06</td>
     <td class="r">Datasheet</td>
    </tr>
   </table>
@@ -1437,6 +1437,94 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
     </tr>
    </table>
   </div>
+  <a name="module_dsp_apb_0"> </a>
+  <div>
+   <hr/>
+   <h2>dsp_apb_0</h2>dsp_apb v1.0
+   <br/>
+   <div class="greydiv">
+    <table class="connectionboxes">
+     <tr>
+      <td class="neighbor" rowspan="2">
+       <a href="#module_hps_0_bridges">hps_0_bridges</a>
+      </td>
+      <td class="from">h2f_lw&#160;&#160;</td>
+      <td class="main" rowspan="12">dsp_apb_0</td>
+     </tr>
+     <tr>
+      <td class="to">&#160;&#160;apb_slave_if</td>
+     </tr>
+     <tr style="height:6px">
+      <td></td>
+     </tr>
+     <tr>
+      <td class="neighbor" rowspan="2">
+       <a href="#module_fpga_data_source_0">fpga_data_source_0</a>
+      </td>
+      <td class="from">axi4stream_master&#160;&#160;</td>
+     </tr>
+     <tr>
+      <td class="to">&#160;&#160;axi4stream_slave_if</td>
+     </tr>
+     <tr style="height:6px">
+      <td></td>
+     </tr>
+     <tr>
+      <td class="neighbor" rowspan="4">
+       <a href="#module_clk_0">clk_0</a>
+      </td>
+      <td class="from">clk&#160;&#160;</td>
+     </tr>
+     <tr>
+      <td class="to">&#160;&#160;clock</td>
+     </tr>
+     <tr>
+      <td class="from">clk_reset&#160;&#160;</td>
+     </tr>
+     <tr>
+      <td class="to">&#160;&#160;reset_if</td>
+     </tr>
+     <tr>
+      <td></td>
+      <td></td>
+      <td class="from">axi4stream_master_if&#160;&#160;</td>
+      <td class="neighbor" rowspan="2">
+       <a href="#module_fpga_data_sink_0">fpga_data_sink_0</a>
+      </td>
+     </tr>
+     <tr>
+      <td></td>
+      <td></td>
+      <td class="to">&#160;&#160;axi4stream_slave</td>
+     </tr>
+    </table>
+   </div>
+   <br/>
+   <br/>
+   <table class="flowbox">
+    <tr>
+     <td class="parametersbox">
+      <h2>Parameters</h2>
+      <table>
+       <tr>
+        <td class="parametername">deviceFamily</td>
+        <td class="parametervalue">UNKNOWN</td>
+       </tr>
+       <tr>
+        <td class="parametername">generateLegacySim</td>
+        <td class="parametervalue">false</td>
+       </tr>
+      </table>
+     </td>
+    </tr>
+   </table>&#160;&#160;
+   <table class="flowbox">
+    <tr>
+     <td class="parametersbox">
+      <h2>Software Assignments</h2>(none)</td>
+    </tr>
+   </table>
+  </div>
   <a name="module_fpga_data_sink_0"> </a>
   <div>
    <hr/>
@@ -1459,9 +1547,9 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
      </tr>
      <tr>
       <td class="neighbor" rowspan="2">
-       <a href="#module_fpga_data_source_0">fpga_data_source_0</a>
+       <a href="#module_dsp_apb_0">dsp_apb_0</a>
       </td>
-      <td class="from">axi4stream_master&#160;&#160;</td>
+      <td class="from">axi4stream_master_if&#160;&#160;</td>
      </tr>
      <tr>
       <td class="to">&#160;&#160;axi4stream_slave</td>
@@ -1552,13 +1640,13 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
       <td></td>
       <td class="from">axi4stream_master&#160;&#160;</td>
       <td class="neighbor" rowspan="2">
-       <a href="#module_fpga_data_sink_0">fpga_data_sink_0</a>
+       <a href="#module_dsp_apb_0">dsp_apb_0</a>
       </td>
      </tr>
      <tr>
       <td></td>
       <td></td>
-      <td class="to">&#160;&#160;axi4stream_slave</td>
+      <td class="to">&#160;&#160;axi4stream_slave_if</td>
      </tr>
     </table>
    </div>
@@ -20808,7 +20896,7 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
        <a href="#module_hps_0_clk_0">hps_0_clk_0</a>
       </td>
       <td class="from">clk_reset&#160;&#160;</td>
-      <td class="main" rowspan="160">hps_0_bridges</td>
+      <td class="main" rowspan="163">hps_0_bridges</td>
      </tr>
      <tr>
       <td class="to">&#160;&#160;reset_sink</td>
@@ -21519,6 +21607,22 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
       <td></td>
       <td></td>
       <td class="to">&#160;&#160;s1</td>
+     </tr>
+     <tr style="height:6px">
+      <td></td>
+     </tr>
+     <tr>
+      <td></td>
+      <td></td>
+      <td class="from">h2f_lw&#160;&#160;</td>
+      <td class="neighbor" rowspan="2">
+       <a href="#module_dsp_apb_0">dsp_apb_0</a>
+      </td>
+     </tr>
+     <tr>
+      <td></td>
+      <td></td>
+      <td class="to">&#160;&#160;apb_slave_if</td>
      </tr>
      <tr style="height:6px">
       <td></td>
@@ -30179,7 +30283,7 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
        </tr>
        <tr>
         <td class="parametername">timestamp</td>
-        <td class="parametervalue">1763764912</td>
+        <td class="parametervalue">1763778418</td>
        </tr>
        <tr>
         <td class="parametername">deviceFamily</td>
@@ -30204,7 +30308,7 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
        </tr>
        <tr>
         <td class="parametername">TIMESTAMP</td>
-        <td class="parametervalue">1763764912</td>
+        <td class="parametervalue">1763778418</td>
        </tr>
       </table>
      </td>
@@ -30213,8 +30317,8 @@ div.greydiv { vertical-align:top ; text-align:center ; background:#eeeeee ; bord
   </div>
   <table class="blueBar">
    <tr>
-    <td class="l">generation took 0.01 seconds</td>
-    <td class="r">rendering took 0.20 seconds</td>
+    <td class="l">generation took 0.02 seconds</td>
+    <td class="r">rendering took 0.18 seconds</td>
    </tr>
   </table>
  </body>

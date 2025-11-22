@@ -33,6 +33,22 @@
          type = "String";
       }
    }
+   element dsp_apb_0
+   {
+      datum _sortIndex
+      {
+         value = "12";
+         type = "int";
+      }
+   }
+   element dsp_apb_0.apb_slave_if
+   {
+      datum baseAddress
+      {
+         value = "48";
+         type = "String";
+      }
+   }
    element fpga_data_sink_0
    {
       datum _sortIndex
@@ -245,6 +261,30 @@
          type = "String";
       }
    }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element sysid_qsys
    {
       datum _sortIndex
@@ -347,6 +387,7 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="4" />
  </module>
+ <module name="dsp_apb_0" kind="dsp_apb" version="1.0" enabled="1" />
  <module
    name="fpga_data_sink_0"
    kind="fpga_data_sink"
@@ -1008,6 +1049,15 @@
    kind="avalon"
    version="17.0"
    start="hps_0.h2f_lw_axi_master"
+   end="dsp_apb_0.apb_slave_if">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0030" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="hps_0.h2f_lw_axi_master"
    end="jtag_uart.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x00020000" />
@@ -1107,6 +1157,11 @@
    kind="axi4stream"
    version="17.0"
    start="fpga_data_source_0.axi4stream_master"
+   end="dsp_apb_0.axi4stream_slave_if" />
+ <connection
+   kind="axi4stream"
+   version="17.0"
+   start="dsp_apb_0.axi4stream_master_if"
    end="fpga_data_sink_0.axi4stream_slave" />
  <connection
    kind="clock"
@@ -1142,6 +1197,7 @@
    version="17.0"
    start="clk_0.clk"
    end="fpga_data_sink_0.clock" />
+ <connection kind="clock" version="17.0" start="clk_0.clk" end="dsp_apb_0.clock" />
  <connection
    kind="clock"
    version="17.0"
@@ -1216,6 +1272,11 @@
    version="17.0"
    start="clk_0.clk_reset"
    end="onchip_memory2_0.reset1" />
+ <connection
+   kind="reset"
+   version="17.0"
+   start="clk_0.clk_reset"
+   end="dsp_apb_0.reset_if" />
  <connection
    kind="reset"
    version="17.0"

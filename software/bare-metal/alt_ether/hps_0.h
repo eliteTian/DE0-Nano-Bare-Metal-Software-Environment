@@ -100,6 +100,17 @@
 #define FPGA_DATA_SOURCE_0_END 0x2f
 
 /*
+ * Macros for device 'dsp_apb_0', class 'dsp_apb'
+ * The macros are prefixed with 'DSP_APB_0_'.
+ * The prefix is the slave descriptor.
+ */
+#define DSP_APB_0_COMPONENT_TYPE dsp_apb
+#define DSP_APB_0_COMPONENT_NAME dsp_apb_0
+#define DSP_APB_0_BASE 0x30
+#define DSP_APB_0_SPAN 16
+#define DSP_APB_0_END 0x3f
+
+/*
  * Macros for device 'sysid_qsys', class 'altera_avalon_sysid_qsys'
  * The macros are prefixed with 'SYSID_QSYS_'.
  * The prefix is the slave descriptor.
@@ -110,7 +121,7 @@
 #define SYSID_QSYS_SPAN 8
 #define SYSID_QSYS_END 0x10007
 #define SYSID_QSYS_ID 2899645186
-#define SYSID_QSYS_TIMESTAMP 1763594500
+#define SYSID_QSYS_TIMESTAMP 1763778418
 
 /*
  * Macros for device 'led_pio', class 'altera_avalon_pio'

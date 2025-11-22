@@ -120,6 +120,7 @@ void readDbgSink(uint32_t* data){
 
 
 
+
 void dumpRamSource(void) {
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
@@ -139,7 +140,19 @@ void dumpRamSink(void) {
 }
 
 
-void gprTest(void) {
+void writeGPRDSP(uint32_t data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+DSP_APB_0_BASE+DSP_GPR_OFST);
+    *reg_addr = data;
+}
+
+void readGPRDSP(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+DSP_APB_0_BASE+DSP_GPR_OFST);
+    *data = *reg_addr;
+}
+
+
+
+static void gprTest(void) {
     uint32_t gpr;
     readGPRSource(&gpr);
     printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
@@ -152,9 +165,17 @@ void gprTest(void) {
     writeGPRSink(0x26571489);
     readGPRSink(&gpr);
     printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
+
+    readGPRDSP(&gpr);
+    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
+    writeGPRDSP(0x26571489);
+    readGPRDSP(&gpr);
+    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
+
+
 }
 
-void ramWriteTestSrc(void) {
+static void ramWriteTestSrc(void) {
     uint8_t index;
     uint8_t rdata = 0;
     uint8_t wdata;
@@ -197,7 +218,7 @@ void ramWriteTestSnk(void) {
 
 }
 
-void ramReadSnk(void) {
+static void ramReadSnk(void) {
     uint8_t index;
     uint8_t rdata = 0;
     uint8_t addr;
@@ -220,7 +241,7 @@ void ramReadSnk(void) {
 void dspTest(void) {
     uint32_t data;
     gprTest(); //general purpose register test. simple wr and rd
-    ramReadSnk();
+    //ramReadSnk();
     ramWriteTestSrc();// fill up source ram with data and do a read back test 
     dumpRamSink(); // set up sink ram state machine in  dump state, expecting data from st IF
     readCTRLSink(&data);

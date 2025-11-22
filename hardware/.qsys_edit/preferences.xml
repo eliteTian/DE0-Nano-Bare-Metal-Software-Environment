@@ -3,12 +3,13 @@
  <debug showDebugMenu="0" />
  <systemtable filter="All Interfaces">
   <columns>
-   <connections preferredWidth="239" />
+   <connections preferredWidth="255" />
    <irq preferredWidth="63" />
    <export preferredWidth="476" />
+   <name preferredWidth="380" />
   </columns>
  </systemtable>
- <library expandedCategories="Project,Library" />
+ <library expandedCategories="Library,Project/custom logic,Project" />
  <window width="1930" height="1059" x="-5" y="-5" />
  <hdlexample language="VERILOG" />
  <generation block_symbol_file="0" />

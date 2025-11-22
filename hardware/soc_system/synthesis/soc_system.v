@@ -79,10 +79,14 @@ module soc_system (
 		input  wire        reset_reset_n                          //                         reset.reset_n
 	);
 
-	wire          fpga_data_source_0_axi4stream_master_tvalid;                    // fpga_data_source_0:axis4_m_tvalid -> fpga_data_sink_0:axis4_s_tvalid
-	wire          fpga_data_source_0_axi4stream_master_tready;                    // fpga_data_sink_0:axis4_s_tready -> fpga_data_source_0:axis4_m_tready
-	wire    [7:0] fpga_data_source_0_axi4stream_master_tdata;                     // fpga_data_source_0:axis4_m_tdata -> fpga_data_sink_0:axis4_s_tdata
-	wire          fpga_data_source_0_axi4stream_master_tlast;                     // fpga_data_source_0:axis4_m_tlast -> fpga_data_sink_0:axis4_s_tlast
+	wire          fpga_data_source_0_axi4stream_master_tvalid;                    // fpga_data_source_0:axis4_m_tvalid -> dsp_apb_0:axis4_s_tvalid
+	wire          fpga_data_source_0_axi4stream_master_tready;                    // dsp_apb_0:axis4_s_tready -> fpga_data_source_0:axis4_m_tready
+	wire    [7:0] fpga_data_source_0_axi4stream_master_tdata;                     // fpga_data_source_0:axis4_m_tdata -> dsp_apb_0:axis4_s_tdata
+	wire          fpga_data_source_0_axi4stream_master_tlast;                     // fpga_data_source_0:axis4_m_tlast -> dsp_apb_0:axis4_s_tlast
+	wire          dsp_apb_0_axi4stream_master_if_tvalid;                          // dsp_apb_0:axis4_m_tvalid -> fpga_data_sink_0:axis4_s_tvalid
+	wire          dsp_apb_0_axi4stream_master_if_tready;                          // fpga_data_sink_0:axis4_s_tready -> dsp_apb_0:axis4_m_tready
+	wire    [7:0] dsp_apb_0_axi4stream_master_if_tdata;                           // dsp_apb_0:axis4_m_tdata -> fpga_data_sink_0:axis4_s_tdata
+	wire          dsp_apb_0_axi4stream_master_if_tlast;                           // dsp_apb_0:axis4_m_tlast -> fpga_data_sink_0:axis4_s_tlast
 	wire    [1:0] hps_0_h2f_axi_master_awburst;                                   // hps_0:h2f_AWBURST -> mm_interconnect_0:hps_0_h2f_axi_master_awburst
 	wire    [3:0] hps_0_h2f_axi_master_arlen;                                     // hps_0:h2f_ARLEN -> mm_interconnect_0:hps_0_h2f_axi_master_arlen
 	wire    [7:0] hps_0_h2f_axi_master_wstrb;                                     // hps_0:h2f_WSTRB -> mm_interconnect_0:hps_0_h2f_axi_master_wstrb
@@ -182,6 +186,13 @@ module soc_system (
 	wire          mm_interconnect_0_intr_capturer_0_avalon_slave_0_read;          // mm_interconnect_0:intr_capturer_0_avalon_slave_0_read -> intr_capturer_0:read
 	wire   [31:0] mm_interconnect_0_sysid_qsys_control_slave_readdata;            // sysid_qsys:readdata -> mm_interconnect_0:sysid_qsys_control_slave_readdata
 	wire    [0:0] mm_interconnect_0_sysid_qsys_control_slave_address;             // mm_interconnect_0:sysid_qsys_control_slave_address -> sysid_qsys:address
+	wire    [3:0] mm_interconnect_0_dsp_apb_0_apb_slave_if_paddr;                 // mm_interconnect_0:dsp_apb_0_apb_slave_if_paddr -> dsp_apb_0:apb_slave_paddr
+	wire          mm_interconnect_0_dsp_apb_0_apb_slave_if_pready;                // dsp_apb_0:apb_slave_pready -> mm_interconnect_0:dsp_apb_0_apb_slave_if_pready
+	wire   [31:0] mm_interconnect_0_dsp_apb_0_apb_slave_if_prdata;                // dsp_apb_0:apb_slave_prdata -> mm_interconnect_0:dsp_apb_0_apb_slave_if_prdata
+	wire   [31:0] mm_interconnect_0_dsp_apb_0_apb_slave_if_pwdata;                // mm_interconnect_0:dsp_apb_0_apb_slave_if_pwdata -> dsp_apb_0:apb_slave_pwdata
+	wire          mm_interconnect_0_dsp_apb_0_apb_slave_if_penable;               // mm_interconnect_0:dsp_apb_0_apb_slave_if_penable -> dsp_apb_0:apb_slave_penable
+	wire          mm_interconnect_0_dsp_apb_0_apb_slave_if_psel;                  // mm_interconnect_0:dsp_apb_0_apb_slave_if_psel -> dsp_apb_0:apb_slave_psel
+	wire          mm_interconnect_0_dsp_apb_0_apb_slave_if_pwrite;                // mm_interconnect_0:dsp_apb_0_apb_slave_if_pwrite -> dsp_apb_0:apb_slave_pwrite
 	wire          mm_interconnect_0_fpga_data_source_0_avalon_slave_0_chipselect; // mm_interconnect_0:fpga_data_source_0_avalon_slave_0_chipselect -> fpga_data_source_0:avs_chipselect
 	wire   [31:0] mm_interconnect_0_fpga_data_source_0_avalon_slave_0_readdata;   // fpga_data_source_0:avs_readdata -> mm_interconnect_0:fpga_data_source_0_avalon_slave_0_readdata
 	wire    [1:0] mm_interconnect_0_fpga_data_source_0_avalon_slave_0_address;    // mm_interconnect_0:fpga_data_source_0_avalon_slave_0_address -> fpga_data_source_0:avs_address
@@ -249,7 +260,7 @@ module soc_system (
 	wire   [31:0] hps_0_f2h_irq1_irq;                                             // irq_mapper_001:sender_irq -> hps_0:f2h_irq_p1
 	wire   [31:0] intr_capturer_0_interrupt_receiver_irq;                         // irq_mapper_002:sender_irq -> intr_capturer_0:interrupt_in
 	wire          irq_mapper_receiver0_irq;                                       // jtag_uart:av_irq -> [irq_mapper:receiver0_irq, irq_mapper_002:receiver0_irq]
-	wire          rst_controller_reset_out_reset;                                 // rst_controller:reset_out -> [dipsw_pio:reset_n, fpga_data_sink_0:reset_n, fpga_data_source_0:reset_n, intr_capturer_0:rst_n, irq_mapper_002:reset, jtag_uart:rst_n, led_pio:reset_n, mm_interconnect_0:fpga_only_master_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_0:onchip_memory2_0_reset1_reset_bridge_in_reset_reset, mm_interconnect_1:hps_only_master_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_1:hps_only_master_master_translator_reset_reset_bridge_in_reset_reset, onchip_memory2_0:reset, rst_translator:in_reset, sysid_qsys:reset_n]
+	wire          rst_controller_reset_out_reset;                                 // rst_controller:reset_out -> [dipsw_pio:reset_n, dsp_apb_0:rstn, fpga_data_sink_0:reset_n, fpga_data_source_0:reset_n, intr_capturer_0:rst_n, irq_mapper_002:reset, jtag_uart:rst_n, led_pio:reset_n, mm_interconnect_0:fpga_only_master_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_0:onchip_memory2_0_reset1_reset_bridge_in_reset_reset, mm_interconnect_1:hps_only_master_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_1:hps_only_master_master_translator_reset_reset_bridge_in_reset_reset, onchip_memory2_0:reset, rst_translator:in_reset, sysid_qsys:reset_n]
 	wire          rst_controller_reset_out_reset_req;                             // rst_controller:reset_req -> [onchip_memory2_0:reset_req, rst_translator:reset_req_in]
 	wire          rst_controller_001_reset_out_reset;                             // rst_controller_001:reset_out -> [mm_interconnect_0:hps_0_h2f_axi_master_agent_clk_reset_reset_bridge_in_reset_reset, mm_interconnect_1:hps_0_f2h_axi_slave_agent_reset_sink_reset_bridge_in_reset_reset]
 
@@ -261,6 +272,26 @@ module soc_system (
 		.in_port  (dipsw_pio_external_connection_export)     // external_connection.export
 	);
 
+	fpga_dsp dsp_apb_0 (
+		.rstn              (~rst_controller_reset_out_reset),                  //             reset_if.reset_n
+		.apb_slave_paddr   (mm_interconnect_0_dsp_apb_0_apb_slave_if_paddr),   //         apb_slave_if.paddr
+		.apb_slave_penable (mm_interconnect_0_dsp_apb_0_apb_slave_if_penable), //                     .penable
+		.apb_slave_prdata  (mm_interconnect_0_dsp_apb_0_apb_slave_if_prdata),  //                     .prdata
+		.apb_slave_pwdata  (mm_interconnect_0_dsp_apb_0_apb_slave_if_pwdata),  //                     .pwdata
+		.apb_slave_pwrite  (mm_interconnect_0_dsp_apb_0_apb_slave_if_pwrite),  //                     .pwrite
+		.apb_slave_psel    (mm_interconnect_0_dsp_apb_0_apb_slave_if_psel),    //                     .psel
+		.apb_slave_pready  (mm_interconnect_0_dsp_apb_0_apb_slave_if_pready),  //                     .pready
+		.axis4_m_tdata     (dsp_apb_0_axi4stream_master_if_tdata),             // axi4stream_master_if.tdata
+		.axis4_m_tready    (dsp_apb_0_axi4stream_master_if_tready),            //                     .tready
+		.axis4_m_tvalid    (dsp_apb_0_axi4stream_master_if_tvalid),            //                     .tvalid
+		.axis4_m_tlast     (dsp_apb_0_axi4stream_master_if_tlast),             //                     .tlast
+		.axis4_s_tdata     (fpga_data_source_0_axi4stream_master_tdata),       //  axi4stream_slave_if.tdata
+		.axis4_s_tready    (fpga_data_source_0_axi4stream_master_tready),      //                     .tready
+		.axis4_s_tvalid    (fpga_data_source_0_axi4stream_master_tvalid),      //                     .tvalid
+		.axis4_s_tlast     (fpga_data_source_0_axi4stream_master_tlast),       //                     .tlast
+		.clk               (clk_clk)                                           //                clock.clk
+	);
+
 	fpga_data_sink fpga_data_sink_0 (
 		.clk            (clk_clk),                                                      //            clock.clk
 		.reset_n        (~rst_controller_reset_out_reset),                              //            reset.reset_n
@@ -269,10 +300,10 @@ module soc_system (
 		.avs_chipselect (mm_interconnect_0_fpga_data_sink_0_avalon_slave_0_chipselect), //                 .chipselect
 		.avs_write_n    (~mm_interconnect_0_fpga_data_sink_0_avalon_slave_0_write),     //                 .write_n
 		.avs_writedata  (mm_interconnect_0_fpga_data_sink_0_avalon_slave_0_writedata),  //                 .writedata
-		.axis4_s_tdata  (fpga_data_source_0_axi4stream_master_tdata),                   // axi4stream_slave.tdata
-		.axis4_s_tlast  (fpga_data_source_0_axi4stream_master_tlast),                   //                 .tlast
-		.axis4_s_tready (fpga_data_source_0_axi4stream_master_tready),                  //                 .tready
-		.axis4_s_tvalid (fpga_data_source_0_axi4stream_master_tvalid)                   //                 .tvalid
+		.axis4_s_tdata  (dsp_apb_0_axi4stream_master_if_tdata),                         // axi4stream_slave.tdata
+		.axis4_s_tlast  (dsp_apb_0_axi4stream_master_if_tlast),                         //                 .tlast
+		.axis4_s_tready (dsp_apb_0_axi4stream_master_if_tready),                        //                 .tready
+		.axis4_s_tvalid (dsp_apb_0_axi4stream_master_if_tvalid)                         //                 .tvalid
 	);
 
 	fpga_data_source fpga_data_source_0 (
@@ -572,6 +603,13 @@ module soc_system (
 	);
 
 	soc_system_mm_interconnect_0 mm_interconnect_0 (
+		.dsp_apb_0_apb_slave_if_paddr                                     (mm_interconnect_0_dsp_apb_0_apb_slave_if_paddr),                 //                                     dsp_apb_0_apb_slave_if.paddr
+		.dsp_apb_0_apb_slave_if_psel                                      (mm_interconnect_0_dsp_apb_0_apb_slave_if_psel),                  //                                                           .psel
+		.dsp_apb_0_apb_slave_if_penable                                   (mm_interconnect_0_dsp_apb_0_apb_slave_if_penable),               //                                                           .penable
+		.dsp_apb_0_apb_slave_if_pwrite                                    (mm_interconnect_0_dsp_apb_0_apb_slave_if_pwrite),                //                                                           .pwrite
+		.dsp_apb_0_apb_slave_if_pwdata                                    (mm_interconnect_0_dsp_apb_0_apb_slave_if_pwdata),                //                                                           .pwdata
+		.dsp_apb_0_apb_slave_if_prdata                                    (mm_interconnect_0_dsp_apb_0_apb_slave_if_prdata),                //                                                           .prdata
+		.dsp_apb_0_apb_slave_if_pready                                    (mm_interconnect_0_dsp_apb_0_apb_slave_if_pready),                //                                                           .pready
 		.hps_0_h2f_axi_master_awid                                        (hps_0_h2f_axi_master_awid),                                      //                                       hps_0_h2f_axi_master.awid
 		.hps_0_h2f_axi_master_awaddr                                      (hps_0_h2f_axi_master_awaddr),                                    //                                                           .awaddr
 		.hps_0_h2f_axi_master_awlen                                       (hps_0_h2f_axi_master_awlen),                                     //                                                           .awlen
