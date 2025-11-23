@@ -32,7 +32,18 @@
 #define  SRC_GPR_OFST 0x8
 #define  SRC_DBG_OFST 0xC
 
-#define  DSP_GPR_OFST 0x8
+#define  DSP_CTRL_OFST 0x0
+
+#define  DSP_COEFF0_OFST 0x8 //reg2
+#define  DSP_COEFF0_TAP0_OFST 0
+#define  DSP_COEFF0_TAP1_OFST 8
+#define  DSP_COEFF0_TAP2_OFST 16
+#define  DSP_COEFF0_TAP3_OFST 24
+
+#define  DSP_COEFF1_OFST 0xC //reg3
+#define  DSP_COEFF1_TAP4_OFST 0
+
+#define  DSP_GPR_OFST 0x4 //reg1
 
 
 void writeRamSource(uint8_t addr, uint8_t data);
@@ -52,6 +63,11 @@ void readDbgSink(uint32_t* data);
 
 void writeGPRDSP(uint32_t data);
 void readGPRSDSP(uint32_t* data);
+
+void dspSetCoeff(uint8_t tap0,uint8_t tap1,uint8_t tap2,uint8_t tap3,uint8_t tap4);
+void getCoeff0(uint32_t* data);
+void getCoeff1(uint32_t* data);
+
 
 
 

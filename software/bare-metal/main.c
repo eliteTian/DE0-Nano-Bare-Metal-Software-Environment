@@ -35,7 +35,7 @@
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
 
 extern UART_INFO_t term0_info;
-extern void dspTest(void);
+extern void dspTest(uint8_t* dsp_arr);
 
 
 void mysleep(uint32_t cycles);
@@ -44,6 +44,8 @@ void dbgReg(uint32_t addr);
 static alt_eth_emac_instance_t emac1;
 int eth_main(alt_eth_emac_instance_t* emac);
 #endif
+
+static uint8_t dsp_arr[32];
 
 void clkMgrTest(void);
 void rstMgrTest(void);
@@ -712,34 +714,11 @@ ALT_STATUS_CODE socfpga_bridge_io(void)
 
 
 void fpgaCustomTest(void){
-    /* initial raw register test
-	uint32_t loop_count;
-
-    uint32_t* h2p_custom_reg_addr;
-
-	h2p_custom_reg_addr =(uint32_t* )( ALT_LWFPGASLVS_OFST  +  CUSTOM_FPGA_REG_0_BASE  );
-
-    printf("Custom reg address is : 0x%08x\r\n", h2p_custom_reg_addr );
-    printf("Custom reg address data is : 0x%08x\r\n", *h2p_custom_reg_addr );
-    *h2p_custom_reg_addr = 0xa5a5a5a5;
-
-    printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
-
-
-    for(loop_count = 0; loop_count != 8; loop_count++) {
-        *h2p_custom_reg_addr++ = loop_count|loop_count<<24|loop_count<<16|loop_count<<8;
-        mysleep( 1000*1000 );
+    uint8_t i;
+    dspTest(dsp_arr);
+    for(i=0;i<32;i++){
+        printf("Dram value check: 0x%02x\r\n", dsp_arr[i] );
     }
-
-    for(loop_count = 0; loop_count != 8; loop_count++) {
-        h2p_custom_reg_addr--;
-        printf("Custom reg address data is after writing : 0x%08x\r\n", *h2p_custom_reg_addr );
-        mysleep( 1000*1000 );
-    }
-    */
-
-
-    dspTest();
 
 
     printf("TEST DONE\r\n");
