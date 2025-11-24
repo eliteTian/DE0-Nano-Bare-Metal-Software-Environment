@@ -16,13 +16,13 @@ module fpga_data_sink (
 );
 
 wire              clk_en;
-reg     [31:0] CTRL, STAT, reg2;
-wire[31:0]  dbg_reg;
-wire        cmd_valid = CTRL[0]; // 1 means a pending cmd
-wire[1:0]   cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
-wire[4:0]   cmd_addr = CTRL[12:8];
-wire[7:0]   cmd_data = CTRL[23:16];
-wire        cmd_clear_cnt = CTRL[31];
+reg [31:0]   CTRL, STAT, reg2;
+wire[31:0]   dbg_reg;
+wire         cmd_valid = CTRL[0]; // 1 means a pending cmd
+wire[1:0]    cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
+wire[11:0]   cmd_addr = CTRL[15:4];
+wire[7:0]    cmd_data = CTRL[23:16];
+wire         cmd_clear_cnt = CTRL[31];
 
 wire        pend    = STAT[0];
 
@@ -56,10 +56,10 @@ wire        pend    = STAT[0];
                           avs_address==2'b10 ? reg2:
                           avs_address==2'b11 ? dbg_reg: 32'hFFFFFFFF;
 
-reg[7:0] mem[0:31];
-reg[4:0] addr;
-reg[7:0] rdata;
-reg      rvalid;
+reg[7:0]    mem[0:4095];
+reg[11:0]   addr;
+reg[7:0]    rdata;
+reg         rvalid;
 
 
 reg        axis4_s_tready_r;
@@ -155,7 +155,7 @@ end
                     
 assign axis4_s_tready = 1'b1; 
 
-reg[7:0] cnt;
+reg[15:0] cnt;
  
 always@(posedge clk, negedge reset_n) begin
     if(!reset_n) begin
@@ -169,9 +169,8 @@ always@(posedge clk, negedge reset_n) begin
     end
 end
 
-assign dbg_reg[7:0] = cnt;
-assign dbg_reg[9:8] = state;
-assign dbg_reg[20:16] = addr;
-
+assign dbg_reg[15:0] = cnt;
+assign dbg_reg[27:16] = addr;
+assign dbg_reg[29:28] = state;
 
 endmodule

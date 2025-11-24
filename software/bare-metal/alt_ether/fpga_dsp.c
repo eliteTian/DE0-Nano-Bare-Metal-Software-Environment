@@ -64,7 +64,8 @@ void readRamSink(uint8_t addr, uint8_t* rdata){
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
     uint32_t temp, pend;
     reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_CTRL_OFST);
-    *reg_addr = reg_val;
+    *reg_addr = reg_val; //write rd command to cmd register
+
     reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_STATUS_OFST);
     do{
         temp = *reg_addr;
@@ -72,6 +73,17 @@ void readRamSink(uint8_t addr, uint8_t* rdata){
     } while(pend);
     
     *rdata = (temp & SRC_STATUS_RDATA) >> SRC_STATUS_RDATA_OFST ;
+}
+
+void waitStatusComplete(void) {
+    uint32_t temp, pend;
+    volatile uint32_t* reg_addr;
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_STATUS_OFST);
+    do{
+        temp = *reg_addr;
+        pend = temp & SRC_STATUS_PEND;
+    } while(pend); // can add timeout here.
+
 }
 
 void writeGPRSource(uint32_t data){
@@ -176,20 +188,20 @@ void gprTest(void) {
 }
 
 static void ramWriteTestSrc(void) {
-    uint8_t index;
-    uint8_t rdata = 0;
-    uint8_t wdata;
-    uint8_t addr;
+    uint16_t  index;
+    uint8_t   rdata = 0;
+    uint8_t   wdata;
+    uint16_t  addr;
 
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
-        wdata = pseudoRand(index);
+        wdata = pseudoRand((uint8_t)index);
         writeRamSource(addr, wdata);
     }
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
         readRamSource(addr,&rdata);
-        if(rdata!=pseudoRand(index)) {
+        if(rdata!=pseudoRand((uint8_t)index)) {
             printf("Source RAM data mismatch: 0x%02x\r\n", rdata );
         }
     }
@@ -197,20 +209,20 @@ static void ramWriteTestSrc(void) {
 }
 
 void ramWriteTestSnk(void) {
-    uint8_t index;
+    uint16_t index;
     uint8_t rdata = 0;
     uint8_t wdata;
-    uint8_t addr;
+    uint16_t addr;
 
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
-        wdata = 32-index;
+        wdata = pseudoRand((uint8_t)index);
         writeRamSink(addr, wdata);
     }
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
         readRamSink(addr,&rdata);
-        if(rdata!=32-index) {
+        if(rdata!=pseudoRand((uint8_t)index)) {
             //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
             printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
         }
@@ -218,19 +230,15 @@ void ramWriteTestSnk(void) {
 
 }
 
-static void ramReadSnk(void) {
-    uint8_t index;
+void ramReadSnk(void) {
+    uint16_t index;
     uint8_t rdata = 0;
-    uint8_t addr;
+    uint16_t addr;
 
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
         readRamSink(addr,&rdata);
         printf("Sink RAM data read is : 0x%02x\r\n", rdata );     
-        //if(rdata!=32-index) {
-        //    //printf("Sink ram before dump writing : 0x%02x\r\n", rdata );
-        //    printf("Sink RAM data mismatch: 0x%02x\r\n", rdata );        
-        //}
     }
 
 }
@@ -267,8 +275,9 @@ void getCoeff1(uint32_t* data){
 void dspTest(uint8_t* dsp_arr ) {
     uint32_t data;
     uint8_t rdata;
-    uint8_t index;
-    uint8_t addr;
+    uint16_t index;
+    uint16_t addr;
+    
 
     gprTest(); //general purpose register test. simple wr and rd
     //ramReadSnk();
@@ -279,9 +288,9 @@ void dspTest(uint8_t* dsp_arr ) {
     readDbgSink(&data);
     printf("After arming sink for ST transfer Debug register is : 0x%08x\r\n", data );
     dumpRamSource(); //start master axi st transfer.          //
-    readDbgSource(&data);
+    readDbgSink(&data);
     printf("After starting ST transfer : 0x%08x\r\n", data );
-    ramReadSnk(); //check processed data;
+    //ramReadSnk(); //check processed data;
 
     dspSetCoeff(28,63,95,119,127);
     
@@ -297,11 +306,13 @@ void dspTest(uint8_t* dsp_arr ) {
     readDbgSink(&data);
     printf("After arming sink for ST transfer Debug register is : 0x%08x\r\n", data );
     dumpRamSource(); //start master axi st transfer.          //
-    readDbgSource(&data);
+    waitStatusComplete();
+    readDbgSink(&data);
     printf("After starting ST transfer : 0x%08x\r\n", data );
-    ramReadSnk();
+    
+    //ramReadSnk();
 
-    for(index = 0; index < 32; index++) {
+    for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
         readRamSink(addr,&rdata);
         *dsp_arr++=rdata;

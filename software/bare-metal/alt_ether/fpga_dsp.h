@@ -7,43 +7,45 @@
 #include "socal/socal.h"
 #include "hps_0.h"
 
+#define  RAM_SIZE                       4096
+
 #define  SRC_CTRL_OFST                  0x0
 #define  SRC_CTRL_CMD_VALID             0x1<<0
 #define  SRC_CTRL_CMD_TYPE              0x3<<1
-#define  SRC_CTRL_CMD_ADDR              0x1F<<8
+#define  SRC_CTRL_CMD_ADDR              0xFFF<<4
 #define  SRC_CTRL_CMD_DATA              0xFF<<16
 
 #define  SRC_CTRL_CMD_VALID_OFST        0
 #define  SRC_CTRL_CMD_TYPE_OFST         1
-#define  SRC_CTRL_CMD_ADDR_OFST         8
+#define  SRC_CTRL_CMD_ADDR_OFST         4
 #define  SRC_CTRL_CMD_DATA_OFST         16
 #define  SRC_CTRL_CMD_CLR_CNT_OFST      31
 
 
 
 
-#define  SRC_STATUS_OFST    0x4
-#define  SRC_STATUS_PEND    0x1<<0
-#define  SRC_STATUS_RDATA   0xFF<<8
+#define  SRC_STATUS_OFST                0x4
+#define  SRC_STATUS_PEND                0x1<<0
+#define  SRC_STATUS_RDATA               0xFF<<8
 
-#define  SRC_STATUS_PEND_OFST    0
-#define  SRC_STATUS_RDATA_OFST   8
+#define  SRC_STATUS_PEND_OFST           0
+#define  SRC_STATUS_RDATA_OFST          8
 
-#define  SRC_GPR_OFST 0x8
-#define  SRC_DBG_OFST 0xC
+#define  SRC_GPR_OFST                   0x8
+#define  SRC_DBG_OFST                   0xC
 
-#define  DSP_CTRL_OFST 0x0
+#define  DSP_CTRL_OFST                  0x0
 
-#define  DSP_COEFF0_OFST 0x8 //reg2
-#define  DSP_COEFF0_TAP0_OFST 0
-#define  DSP_COEFF0_TAP1_OFST 8
-#define  DSP_COEFF0_TAP2_OFST 16
-#define  DSP_COEFF0_TAP3_OFST 24
+#define  DSP_COEFF0_OFST                0x8 //reg2
+#define  DSP_COEFF0_TAP0_OFST           0
+#define  DSP_COEFF0_TAP1_OFST           8
+#define  DSP_COEFF0_TAP2_OFST           16
+#define  DSP_COEFF0_TAP3_OFST           24
 
-#define  DSP_COEFF1_OFST 0xC //reg3
-#define  DSP_COEFF1_TAP4_OFST 0
+#define  DSP_COEFF1_OFST                0xC //reg3
+#define  DSP_COEFF1_TAP4_OFST           0
 
-#define  DSP_GPR_OFST 0x4 //reg1
+#define  DSP_GPR_OFST                   0x4 //reg1
 
 
 void writeRamSource(uint8_t addr, uint8_t data);

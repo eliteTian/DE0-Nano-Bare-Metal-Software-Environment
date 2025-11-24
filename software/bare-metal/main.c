@@ -45,7 +45,7 @@ static alt_eth_emac_instance_t emac1;
 int eth_main(alt_eth_emac_instance_t* emac);
 #endif
 
-static uint8_t dsp_arr[32];
+static uint8_t dsp_arr[4096];
 
 void clkMgrTest(void);
 void rstMgrTest(void);
@@ -714,11 +714,11 @@ ALT_STATUS_CODE socfpga_bridge_io(void)
 
 
 void fpgaCustomTest(void){
-    uint8_t i;
     dspTest(dsp_arr);
-    for(i=0;i<32;i++){
-        printf("Dram value check: 0x%02x\r\n", dsp_arr[i] );
-    }
+    //uint16_t i;
+    //for(i=0;i<4096;i++){
+    //    printf("Dram value check: 0x%02x\r\n", dsp_arr[i] );
+    //}
 
 
     printf("TEST DONE\r\n");

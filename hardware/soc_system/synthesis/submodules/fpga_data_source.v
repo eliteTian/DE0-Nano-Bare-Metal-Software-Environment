@@ -22,7 +22,7 @@ wire[31:0]  dbg_reg;
 
 wire        cmd_valid = CTRL[0]; // 1 means a pending cmd
 wire[1:0]   cmd_type = CTRL[2:1]; //wr = 1, rd = 0; 2'b01=dump; 2'b11 = rsvd 
-wire[4:0]   cmd_addr = CTRL[12:8];
+wire[11:0]  cmd_addr = CTRL[15:4]; //4K bytes
 wire[7:0]   cmd_data = CTRL[23:16];
 wire        cmd_clear_cnt = CTRL[31];
 
@@ -60,11 +60,11 @@ assign  avs_readdata =  avs_address==0? CTRL:
                         avs_address==2'b11 ? dbg_reg : 32'hFFFFFFFF;
 
 
-reg[7:0] mem[0:31];
-reg[4:0] addr;
-reg[7:0] rdata;
+reg[7:0]  mem[0:4095];
+reg[11:0] addr;
+reg[7:0]  rdata;
 wire[7:0] rdata_w;
-reg      rvalid;
+reg       rvalid;
 
 reg [7:0]  axis4_m_tdata_r;
 reg        axis4_m_tvalid_r;
@@ -160,7 +160,7 @@ assign axis4_m_tdata = rdata_w;
 assign axis4_m_tvalid = axis4_m_tvalid_r;
 assign axis4_m_tlast = axis4_m_tlast_r;
 
-reg[7:0] cnt;
+reg[15:0] cnt;
  
 always@(posedge clk, negedge reset_n) begin
     if(!reset_n) begin
@@ -174,8 +174,8 @@ always@(posedge clk, negedge reset_n) begin
     end
 end
 
-assign dbg_reg[7:0] = cnt;
-assign dbg_reg[9:8] = state;
-assign dbg_reg[20:16] = addr;
+assign dbg_reg[15:0] = cnt;
+assign dbg_reg[27:16] = addr;
+assign dbg_reg[29:28] = state;
 
 endmodule
