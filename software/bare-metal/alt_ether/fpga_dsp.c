@@ -1,7 +1,7 @@
 #include "fpga_dsp.h"
 
-static uint8_t pseudoRand(uint8_t seed)
-{
+static uint8_t pseudoRand(uint8_t seed){
+
     uint8_t lfsr = seed ? seed : 1; // avoid zero lockup
     uint8_t bit;
 
@@ -12,6 +12,38 @@ static uint8_t pseudoRand(uint8_t seed)
     }
     return lfsr;
 }
+
+static const int8_t sine500K[100] = {
+     0,  4,  8, 12, 16, 20, 24, 28, 31, 35,
+    38, 42, 45, 48, 51, 54, 56, 58, 60, 62,
+    62, 63, 63, 63, 62, 62, 60, 58, 56, 54,
+    51, 48, 45, 42, 38, 35, 31, 28, 24, 20,
+    16, 12,  8,  4,  0, -4, -8, -12, -16, -20,
+   -24, -28, -31, -35, -38, -42, -45, -48, -51, -54,
+   -56, -58, -60, -62, -62, -63, -63, -63, -62, -62,
+   -60, -58, -56, -54, -51, -48, -45, -42, -38, -35,
+   -31, -28, -24, -20, -16, -12, -8,  -4,  0,  4,
+     8, 12, 16, 20, 24, 28, 31, 35, 38, 42
+};
+
+static const int8_t sine10M[5] = {
+     0,  60,  36,  -36,  -60
+};
+
+static int8_t mixSig(uint16_t index){
+    uint16_t mod10m = 0;
+    uint16_t mod500k = 0;
+    int8_t val = 0;
+    
+    mod10m = index % 5;
+    mod500k = index % 100;
+    val = sine500K[mod500k] + sine10M[mod10m];
+    return val;
+
+}
+
+
+
 
 void writeRamSource(uint8_t addr, uint8_t data){
     uint32_t reg_val = 0;
@@ -243,6 +275,19 @@ void ramReadSnk(void) {
 
 }
 
+void ramReadSrc(void) {
+    uint16_t index;
+    uint8_t rdata = 0;
+    uint16_t addr;
+
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        readRamSource(addr,&rdata);
+        printf("Source RAM data read is : 0x%02x\r\n", rdata );     
+    }
+
+}
+
 
 void dspSetCoeff(uint8_t tap0,uint8_t tap1,uint8_t tap2,uint8_t tap3,uint8_t tap4) {
     uint32_t reg_val = 0;
@@ -269,6 +314,82 @@ void getCoeff1(uint32_t* data){
     *data = *reg_addr;
 }
 
+void ramWriteSinWav0(){
+    uint16_t  index;
+    uint8_t   rdata = 0;
+    uint8_t   wdata;
+    uint16_t  addr;
+
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        wdata = mixSig(index);
+        writeRamSource(addr, wdata);
+        readRamSource(addr,&rdata);
+        if(rdata!=wdata) {
+            printf("Source RAM data mismatch: 0x%02x vs 0x%02x \r\n", rdata, wdata );
+        }
+    }
+
+}
+
+void ramWriteSinWav(){
+    uint16_t  index;
+    uint8_t   rdata = 0;
+    uint8_t   wdata;
+    uint16_t  addr;
+
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        wdata = mixSig(index);
+        writeRamSource(addr, wdata);
+    }
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index;
+        readRamSource(addr,&rdata);
+        wdata = mixSig(index);
+        if(rdata!=wdata) {
+            printf("Source RAM data mismatch: at index 0x%04x: 0x%02x vs 0x%02x \r\n", index, rdata, wdata );
+        }
+    }
+
+}
+
+
+
+void sinTest(uint8_t* dsp_arr) {
+    uint32_t data;
+    uint8_t rdata;
+    uint16_t index;
+    uint16_t addr;
+    ramWriteTestSrc();
+    ramWriteSinWav();// fill up source ram with data and do a read back test     
+    dspSetCoeff(28,63,95,119,127);
+    getCoeff0(&data);
+    printf("After setting Coeff0 : 0x%08x\r\n", data );
+    getCoeff1(&data);
+    printf("After setting Coeff1 : 0x%08x\r\n", data );
+
+    dumpRamSink(); // set up sink ram state machine in  dump state, expecting data from st IF
+    readCTRLSink(&data);
+    printf("After arming sink for ST transfer CTRL register is : 0x%08x\r\n", data );
+    readDbgSink(&data);
+    printf("After arming sink for ST transfer Debug register is : 0x%08x\r\n", data );
+    dumpRamSource(); //start master axi st transfer.          //
+    waitStatusComplete();
+    readDbgSink(&data);
+    printf("After starting ST transfer : 0x%08x\r\n", data );
+    
+    //ramReadSnk();
+
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        *dsp_arr++=rdata;
+    }
+
+    ramReadSrc();
+    
+}
 
 
 
