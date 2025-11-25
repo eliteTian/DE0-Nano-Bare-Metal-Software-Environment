@@ -48,16 +48,16 @@
 #define  DSP_GPR_OFST                   0x4 //reg1
 
 
-void writeRamSource(uint8_t addr, uint8_t data);
-void readRamSource(uint8_t addr, uint8_t* rdata);
+void writeRamSource(uint16_t addr, uint8_t data);
+void readRamSource(uint16_t addr, uint8_t* rdata);
 void writeGPRSource(uint32_t data);
 void readGPRSource(uint32_t* data);
 void dumpRamSource(void);
 void readDbgSource(uint32_t* data);
 
 
-void writeRamSink(uint8_t addr, uint8_t data);
-void readRamSink(uint8_t addr, uint8_t* rdata);
+void writeRamSink(uint16_t addr, uint8_t data);
+void readRamSink(uint16_t addr, uint8_t* rdata);
 void writeGPRSink(uint32_t data);
 void readGPRSink(uint32_t* data);
 void dumpRamSink(void);

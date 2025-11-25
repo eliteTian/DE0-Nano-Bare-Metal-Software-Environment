@@ -26,46 +26,65 @@ static const int8_t sine500K[100] = {
      8, 12, 16, 20, 24, 28, 31, 35, 38, 42
 };
 
-static const int8_t sine10M[5] = {
-     0,  60,  36,  -36,  -60
+static const int8_t sine10M[5] = { 0, 20, 12, -12, -20 };
+
+static const uint8_t mixed[100] = {
+     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+    30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+    40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+    50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+    60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+    70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+    80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+    90, 91, 92, 93, 94, 95, 96, 97, 98, 99
 };
 
-static int8_t mixSig(uint16_t index){
-    uint16_t mod10m = 0;
-    uint16_t mod500k = 0;
-    int8_t val = 0;
-    
-    mod10m = index % 5;
-    mod500k = index % 100;
-    val = sine500K[mod500k] + sine10M[mod10m];
-    return val;
+//static int8_t mixSig(uint16_t index){
+//    uint16_t mod10m = 0;
+//    uint16_t mod500k = 0;
+//    int8_t val = 0;
+//    
+//    mod10m = index % 5;
+//    mod500k = index % 100;
+//    val = sine500K[mod500k] + sine10M[mod10m];
+//    return val;
+//
+//}
 
+static uint8_t mixSig(uint16_t index){
+    return mixed[index%100];
 }
 
 
 
 
-void writeRamSource(uint8_t addr, uint8_t data){
+void writeRamSource(uint16_t addr, uint8_t data){ //bug found here. addr was uint8_t
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
-    reg_val |= addr<< SRC_CTRL_CMD_ADDR_OFST;
-    reg_val |= data<<SRC_CTRL_CMD_DATA_OFST;
+    reg_val |= ((uint32_t)(addr & 0xFFF))<< SRC_CTRL_CMD_ADDR_OFST;
+    reg_val |= ((uint32_t)data)<<SRC_CTRL_CMD_DATA_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
 
     reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
     *reg_addr = reg_val;
+    //printf("Command register into FPGA is: 0x%08x\r\n", reg_val );
+
 }
 
-void readRamSource(uint8_t addr, uint8_t* rdata){
+void readRamSource(uint16_t addr, uint8_t* rdata){//bug found here.
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
-    reg_val |= addr<< SRC_CTRL_CMD_ADDR_OFST;
+    reg_val |= ((uint32_t)(addr & 0xFFF))<< SRC_CTRL_CMD_ADDR_OFST;
     reg_val |= 0x0<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
     uint32_t temp, pend;
     reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
     *reg_addr = reg_val;
+    //printf("Command register into FPGA is: 0x%08x\r\n", reg_val );
+
     reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_STATUS_OFST);
     do{
         temp = *reg_addr;
@@ -73,14 +92,16 @@ void readRamSource(uint8_t addr, uint8_t* rdata){
     } while(pend);
     
     *rdata = (temp & SRC_STATUS_RDATA) >> SRC_STATUS_RDATA_OFST ;
+    //printf("Command register read data is: 0x%02x\r\n", *rdata );
+
 }
 
 
-void writeRamSink(uint8_t addr, uint8_t data){
+void writeRamSink(uint16_t addr, uint8_t data){
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
-    reg_val |= addr<< SRC_CTRL_CMD_ADDR_OFST;
-    reg_val |= data<<SRC_CTRL_CMD_DATA_OFST;
+    reg_val |= ((uint32_t)(addr & 0xFFF))<< SRC_CTRL_CMD_ADDR_OFST;
+    reg_val |= ((uint32_t)data)<<SRC_CTRL_CMD_DATA_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
 
@@ -88,10 +109,10 @@ void writeRamSink(uint8_t addr, uint8_t data){
     *reg_addr = reg_val;
 }
 
-void readRamSink(uint8_t addr, uint8_t* rdata){
+void readRamSink(uint16_t addr, uint8_t* rdata){
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
-    reg_val |= addr<< SRC_CTRL_CMD_ADDR_OFST;
+    reg_val |= ((uint32_t)(addr & 0xFFF))<< SRC_CTRL_CMD_ADDR_OFST;
     reg_val |= 0x0<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
     uint32_t temp, pend;
@@ -262,6 +283,7 @@ void ramWriteTestSnk(void) {
 
 }
 
+
 void ramReadSnk(void) {
     uint16_t index;
     uint8_t rdata = 0;
@@ -314,45 +336,60 @@ void getCoeff1(uint32_t* data){
     *data = *reg_addr;
 }
 
-void ramWriteSinWav0(){
-    uint16_t  index;
-    uint8_t   rdata = 0;
-    uint8_t   wdata;
-    uint16_t  addr;
-
-    for(index = 0; index < RAM_SIZE; index++) {
-        addr = index; 
-        wdata = mixSig(index);
-        writeRamSource(addr, wdata);
-        readRamSource(addr,&rdata);
-        if(rdata!=wdata) {
-            printf("Source RAM data mismatch: 0x%02x vs 0x%02x \r\n", rdata, wdata );
-        }
-    }
-
-}
 
 void ramWriteSinWav(){
     uint16_t  index;
     uint8_t   rdata = 0;
-    uint8_t   wdata;
+    int8_t    signed_wdata;
+    uint8_t   raw_wdata;
     uint16_t  addr;
+
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        signed_wdata = mixSig(index);
+        raw_wdata = (uint8_t)signed_wdata;
+        printf("Source RAM data written at index %d: is %d  raw is 0x%02x \r\n", index, signed_wdata, raw_wdata );
+
+        writeRamSource(addr, raw_wdata);
+    }
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index;
+        readRamSource(addr,&rdata);
+        signed_wdata = mixSig(index);
+        raw_wdata = (uint8_t)signed_wdata;
+        if(rdata!=raw_wdata) {
+            printf("Source RAM data mismatch: at index %d: %d vs %d \r\n", index, (int8_t)rdata, (int8_t)raw_wdata );
+        }
+    }
+
+}
+
+
+void ramWriteSinUnsinged(void) {
+    uint16_t index;
+    uint8_t rdata = 0;
+    uint8_t wdata;
+    uint16_t addr;
+    uint8_t cdata;
 
     for(index = 0; index < RAM_SIZE; index++) {
         addr = index; 
         wdata = mixSig(index);
         writeRamSource(addr, wdata);
+        
     }
     for(index = 0; index < RAM_SIZE; index++) {
         addr = index;
+        cdata = mixSig(index);
         readRamSource(addr,&rdata);
-        wdata = mixSig(index);
-        if(rdata!=wdata) {
-            printf("Source RAM data mismatch: at index 0x%04x: 0x%02x vs 0x%02x \r\n", index, rdata, wdata );
+        if(rdata!= cdata) {
+            printf("Source RAM data mismatch: 0x%02x vs 0x%02x\r\n", rdata, cdata );        
         }
     }
 
 }
+
+
 
 
 
@@ -361,8 +398,14 @@ void sinTest(uint8_t* dsp_arr) {
     uint8_t rdata;
     uint16_t index;
     uint16_t addr;
-    ramWriteTestSrc();
-    ramWriteSinWav();// fill up source ram with data and do a read back test     
+
+    for (int i=0; i<100; i++)
+        printf("%d ", mixed[i]);
+    printf("\n");
+
+    //ramWriteTestSrc();
+    ramWriteSinUnsinged();  //fill up source ram with unsigned data  
+    //ramWriteSinWav();// fill up source ram with data and do a read back test     
     dspSetCoeff(28,63,95,119,127);
     getCoeff0(&data);
     printf("After setting Coeff0 : 0x%08x\r\n", data );
@@ -386,9 +429,7 @@ void sinTest(uint8_t* dsp_arr) {
         readRamSink(addr,&rdata);
         *dsp_arr++=rdata;
     }
-
-    ramReadSrc();
-    
+  
 }
 
 

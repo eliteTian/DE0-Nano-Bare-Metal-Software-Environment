@@ -15,4 +15,6 @@ main.bin
 hardware/db/
 hardware/incremental_db/
 *.qws
+*.log
+screenlog.0
 
