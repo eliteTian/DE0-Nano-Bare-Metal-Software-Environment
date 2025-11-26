@@ -719,7 +719,7 @@ void fpgaCustomTest(void){
     sinTest(dsp_arr);
     uint16_t i;
     for(i=0;i<4096;i++){
-        //printf("Dram value check: 0x%02x\r\n", dsp_arr[i] );
+      //  printf("Dram value check: 0x%02x\r\n", dsp_arr[i] );
         printf("(%d,%d)",i, (int8_t)dsp_arr[i] );
         if(i%10 ==9) {
             printf("\r\n" );

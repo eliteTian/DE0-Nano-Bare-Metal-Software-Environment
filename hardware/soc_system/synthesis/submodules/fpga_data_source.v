@@ -145,6 +145,7 @@ always@(posedge clk, negedge reset_n) begin
                         addr <= addr + 1;
                     end
                 end else begin
+                    STAT[0] <= 1'b0;
                     state <= 2'b00;
                     axis4_m_tvalid_r <= 1'b0;
                     axis4_m_tlast_r <= 1'b1;

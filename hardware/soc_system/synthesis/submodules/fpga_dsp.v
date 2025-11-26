@@ -28,6 +28,7 @@ reg[31:0] reg0, reg1, reg2, reg3;
 reg[31:0] rdata;
 assign apb_slave_pready = 1'b1;
 reg[31:0] apb_slave_prdata_r;
+wire [1:0] sel = reg0[1:0];
 
 always@(posedge clk, negedge rstn) begin
     if(!rstn) begin
@@ -185,7 +186,20 @@ always@(posedge clk) begin
 end
 
 
-wire signed [7:0] clean_sig = $signed (sum3[19:12]);
+
+
+//arithmetic shift, preserving signs. register controlled gain.
+wire signed [7:0] clean_sig_msb_shift_0 = sum3>>>12;
+wire signed [7:0] clean_sig_msb_shift_1 = sum3>>>11;
+wire signed [7:0] clean_sig_msb_shift_2 = sum3>>>10;
+wire signed [7:0] clean_sig_msb_shift_3 = sum3>>>9;
+wire signed [7:0] clean_sig;
+
+assign clean_sig = sel==2'b00 ? clean_sig_msb_shift_0 :
+                   sel==2'b01 ? clean_sig_msb_shift_1 :
+                   sel==2'b10 ? clean_sig_msb_shift_2 :
+                   sel==2'b11 ? clean_sig_msb_shift_3 : clean_sig_msb_shift_0;
+
 assign axis4_m_tvalid = axis4_m_tvalid_r;
 assign axis4_m_tdata = clean_sig;
 
