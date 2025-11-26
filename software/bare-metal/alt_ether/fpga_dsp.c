@@ -28,7 +28,7 @@ static const int8_t sine500K[100] = {
 
 static const int8_t sine10M[5] = { 0, 20, 12, -12, -20 };
 
-static const uint8_t mixed[100] = {
+static const uint8_t unsigned_mixed[100] = {
      0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
     10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
@@ -41,21 +41,46 @@ static const uint8_t mixed[100] = {
     90, 91, 92, 93, 94, 95, 96, 97, 98, 99
 };
 
-//static int8_t mixSig(uint16_t index){
-//    uint16_t mod10m = 0;
-//    uint16_t mod500k = 0;
-//    int8_t val = 0;
-//    
-//    mod10m = index % 5;
-//    mod500k = index % 100;
-//    val = sine500K[mod500k] + sine10M[mod10m];
-//    return val;
-//
-//}
+//(0,0),(1,24),(2,20),(3,0),(4,-4),(5,0),(6,24),(7,8),(8,43),(9,15),
+//(10,38),(11,62),(12,57),(13,36),(14,51),(15,74),(16,56),(17,46),(18,60),(19,82),
+//(20,62),(21,83),(22,75),(23,51),(24,62),(25,82),(26,72),(27,46),(28,56),(29,34),
+//(30,51),(31,68),(32,57),(33,30),(34,38),(35,55),(36,31),(37,16),(38,44),(39,0),
+//(40,16),(41,32),(42,20),(43,24),(44,0),(45,16),(46,4),(47,-12),(48,-4),(49,0),
+//(50,-24),(51,-8),(52,-19),(53,-23),(54,-18),(55,-22),(56,-32),(57,-8),(58,-39),(59,-14),
+//(60,-56),(61,-38),(62,-48),(63,-75),(64,-62),(65,-63),(66,-63),(67,-75),(68,-50),(69,-62),
+//(70,-60),(71,-38),(72,-44),(73,-24),(74,-51),(75,-36),(76,-57),(77,-54),(78,-38),(79,-35),
+//(80,-31),(81,-8),(82,-12),(83,-8),(84,-20),(85,-8),(86,4),(87,8),(88,31),(89,55),
+//(90,38),(91,32),(92,28),(93,8),(94,44),(95,24),(96,31),(97,23),(98,18),(99,22)
 
-static uint8_t mixSig(uint16_t index){
-    return mixed[index%100];
+static const int8_t mixed[100] = {
+     0, 24, 20, 0, -4, 0, 24, 8, 43, 15,
+    38, 62, 57, 36, 51, 74, 56, 46, 60, 82,
+    62, 83, 75, 51, 62, 82, 72, 46, 56, 34,
+    51, 68, 57, 30, 38, 55, 31, 16, 44, 0,
+    16, 32, 20, 24, 0, 16, 4, -12, -4, 0,
+   -24, -8, -19, -23, -18, -22, -32, -8, -39, -14,
+   -56, -38, -48, -75, -62, -63, -63, -75, -50, -62,
+   -60, -38, -44, -24, -51, -36, -57, -54, -38, -35,
+   -31, -8, -12, -8, -20, -8, 4, 8, 31, 55,
+    38, 32, 28, 8, 44, 24, 31, 23, 18, 22
+};
+
+
+static int8_t mixSig(uint16_t index){
+    uint16_t mod10m = 0;
+    uint16_t mod500k = 0;
+    int8_t val = 0;
+    
+    mod10m = index % 5;
+    mod500k = index % 100;
+    val = sine500K[mod500k] + sine10M[mod10m];
+    return val;
+
 }
+
+//static uint8_t mixSig(uint16_t index){
+//    return mixed[index%100];
+//}
 
 
 
@@ -348,7 +373,7 @@ void ramWriteSinWav(){
         addr = index; 
         signed_wdata = mixSig(index);
         raw_wdata = (uint8_t)signed_wdata;
-        printf("Source RAM data written at index %d: is %d  raw is 0x%02x \r\n", index, signed_wdata, raw_wdata );
+        //printf("Source RAM data written at index %d: is %d  raw is 0x%02x \r\n", index, signed_wdata, raw_wdata );
 
         writeRamSource(addr, raw_wdata);
     }
@@ -389,6 +414,23 @@ void ramWriteSinUnsinged(void) {
 
 }
 
+void dspGainSet(uint8_t gain) {
+    if(gain >3) {
+        printf("Wrong input value, only 4 choices: 0,1,2,3\r\n" );
+        return;
+    } 
+
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+DSP_APB_0_BASE+DSP_CTRL_OFST);
+    volatile uint32_t val;
+    val = (((uint32_t)gain & DSP_CTRL_GAIN)<<DSP_CTRL_GAIN_OFST);
+    *reg_addr = val;
+}
+
+void dspGainGet(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+DSP_APB_0_BASE+DSP_CTRL_OFST);
+    *data = *reg_addr;
+}
+
 
 
 
@@ -404,9 +446,13 @@ void sinTest(uint8_t* dsp_arr) {
     printf("\n");
 
     //ramWriteTestSrc();
-    ramWriteSinUnsinged();  //fill up source ram with unsigned data  
-    //ramWriteSinWav();// fill up source ram with data and do a read back test     
+    //ramWriteSinUnsinged();  //fill up source ram with unsigned data  
+    ramWriteSinWav();// fill up source ram with data and do a read back test  
+    dspGainSet(3);
     dspSetCoeff(28,63,95,119,127);
+    dspGainGet(&data);
+    printf("After setting gain :   0x%08x\r\n", data );
+
     getCoeff0(&data);
     printf("After setting Coeff0 : 0x%08x\r\n", data );
     getCoeff1(&data);
@@ -453,7 +499,7 @@ void dspTest(uint8_t* dsp_arr ) {
     readDbgSink(&data);
     printf("After starting ST transfer : 0x%08x\r\n", data );
     //ramReadSnk(); //check processed data;
-
+    dspGainSet(2);
     dspSetCoeff(28,63,95,119,127);
     
     getCoeff0(&data);

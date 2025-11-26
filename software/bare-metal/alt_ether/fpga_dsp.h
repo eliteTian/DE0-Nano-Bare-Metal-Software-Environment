@@ -35,6 +35,8 @@
 #define  SRC_DBG_OFST                   0xC
 
 #define  DSP_CTRL_OFST                  0x0
+#define  DSP_CTRL_GAIN_OFST             0x0
+#define  DSP_CTRL_GAIN                  0x3
 
 #define  DSP_COEFF0_OFST                0x8 //reg2
 #define  DSP_COEFF0_TAP0_OFST           0
@@ -69,6 +71,7 @@ void readGPRSDSP(uint32_t* data);
 void dspSetCoeff(uint8_t tap0,uint8_t tap1,uint8_t tap2,uint8_t tap3,uint8_t tap4);
 void getCoeff0(uint32_t* data);
 void getCoeff1(uint32_t* data);
+void dspGainSet(uint8_t gain);
 
 
 
