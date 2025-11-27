@@ -1035,6 +1035,13 @@ ALT_STATUS_CODE alt_eth_phy_reset(uint32_t instance);
 ALT_STATUS_CODE alt_eth_phy_get_duplex_and_speed(uint32_t * phy_duplex_status, uint32_t * phy_speed, uint32_t instance);
 
 
+void systemConfig(uint32_t instance);
+
+void emacHPSIFInit(uint32_t instance);
+void dmaInit(uint32_t instance);
+void emacInit(uint32_t instance);
+
+
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */

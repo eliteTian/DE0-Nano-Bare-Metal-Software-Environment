@@ -222,13 +222,14 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     emac->instance = 1;
     //alt_eth_emac_hps_init(emac->instance);
     //alt_eth_emac_dma_init(emac->instance);
+    alt_eth_emac_dma_init(emac->instance);
+    mysleep(100000*1000);
 
     alt_eth_dma_mac_config(emac);
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
     printf( "SUCCESS: gmac eth1 link state after config is 0x%08x\r\n",(unsigned int)stat );
     //send packet
     printf( "Hufei: get ready to send packet\r\n" );
-    mysleep(80000*1000);
     for( i=0;i<1;i++) {
         //mysleep(5000*1000);
         //for (j = 0; j < 32; j++) {

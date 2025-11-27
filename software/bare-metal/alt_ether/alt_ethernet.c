@@ -44,6 +44,7 @@
 #include "socal/hps.h"
 #include "alt_interrupt.h"
 #include "alt_printf.h"
+#define REG_DBG 
 
 #ifdef ALT_DEBUG_ETHERNET
     #define dprintf printf
@@ -97,8 +98,8 @@ const void *  Alt_Sysmgr_Emac_Ctl_Addr[] = {
 };
 
 static const uint32_t Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[] = {
-    ALT_SYSMGR_EMAC_CTL_PHYSEL_0_SET_MSK,
-    ALT_SYSMGR_EMAC_CTL_PHYSEL_1_SET_MSK 
+    ALT_SYSMGR_EMAC_CTL_PHYSEL_0_SET_MSK,  //3
+    ALT_SYSMGR_EMAC_CTL_PHYSEL_1_SET_MSK   //C
 };
 
 /* Delay function used during ethernet setup */
@@ -152,65 +153,98 @@ void alt_eth_reset_mac(uint32_t instance)
 void alt_eth_emac_dma_init(uint32_t instance){
 
     if (instance > 1) { return; }
+
+    systemConfig(instance); 
+    emacHPSIFInit(instance);
+    dmaInit(instance);
+    emacInit(instance);
+}
+
+void systemConfig(uint32_t instance) {
+    if (instance > 1) { return; }
+#ifdef REG_DBG
+    uint32_t dbg_addr, dbg_data;
+    dbg_addr = (uint32_t) ALT_SYSMGR_EMAC_CTL_ADDR;
+    dbg_data = alt_read_word(ALT_SYSMGR_EMAC_CTL_ADDR);
+    printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+
+    alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR, Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  ALT_SYSMGR_EMAC_CTL_PHYSEL_1_SET(ALT_SYSMGR_EMAC_CTL_PHYSEL_1_E_RGMII)); 
+    dbg_addr = (uint32_t) ALT_SYSMGR_EMAC_CTL_ADDR;
+    dbg_data = alt_read_word(ALT_SYSMGR_EMAC_CTL_ADDR);
+    printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+#else
+    alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR, Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  ALT_SYSMGR_EMAC_CTL_PHYSEL_1_SET(ALT_SYSMGR_EMAC_CTL_PHYSEL_1_E_RGMII)); 
+#endif
+}
+
+void emacHPSIFInit(uint32_t instance){
+    if (instance > 1) { return; }
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
+#ifdef REG_DBG
+    uint32_t dbg_addr, dbg_data;
+#endif
+    //1. After the HPS is released from cold or warm reset, reset the Ethernet Controller module by setting the appropriate emac bit in the permodrst register in the Reset Manager
+    alt_setbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
+    //2. Configure the EMAC Controller clock to 250 MHz by programming the appropriate cnt value in the emac*clk register in the Clock Manager.
+    //Done by U-boot/Preloader
+    //3. Bring the Ethernet PHY out of reset to verify that there are RX PHY clocks.
+    status = alt_eth_phy_reset(instance);
+    if (status != ALT_E_SUCCESS) { 
+        printf( "ERROR: Hufei: PHY reset unsuccessful\r\n" );
+        return ;
+    }
+    //TODO: why here you can't configure PHY, before EMAC deassert reset?
+    status = alt_eth_phy_config(instance);
+    if (status != ALT_E_SUCCESS) { 
+        printf( "ERROR: Hufei: PHY config unsuccessful\r\n" );
+    }
+
+
+    //4. When all the clocks are valid, program the following clock settings
+        //a.Set the physel_* field in the ctrl register of the System Manager (EMAC Group) to 0x1 to select the RGMII PHY interface.
+    //Done in systemConfig
+        //b.Disable the Ethernet Controller FPGA interfaces by clearing the emac_* bit in the module register of the System Manager (FPGA Interface group)
+    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[instance]);
+    //5.Configure all of the EMAC static settings if the user requires a different setting from the default value.These settings include AXI AxCache signal values, 
+    //which are programmed in l3 register in the EMAC group of the System Manager.
+    //6.Execute a register read back to confirm the clock and static configuration settings are valid
+#ifdef REG_DBG   
+    dbg_addr = (uint32_t) ALT_SYSMGR_FPGAINTF_MODULE_ADDR;
+    dbg_data = alt_read_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR);
+    printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+#endif
+    //7.After confirming the settings are valid, software can clear the emac bit in the permodrst register of the Reset Manager to bring the EMAC out of reset..
+    alt_clrbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);    
+    //Note* PHY can't be configured when EMAC is in reset. 
+    status = alt_eth_phy_config(instance);
+    if (status != ALT_E_SUCCESS) { 
+        printf( "ERROR: Hufei: PHY config unsuccessful\r\n" );
+        return ;
+    } else {
+        printf( "ERROR: Hufei: PHY config Done\r\n" );
+    }
+
     
     status = alt_eth_software_reset(instance);
     if (status != ALT_E_SUCCESS) { 
-        printf( "Hufei: DMA INIT Ethenet soft reset not successful\r\n" );
+        printf( "Hufei: Ethenet soft reset not successful\r\n" );
         return;
     }    
 
 }
 
 
-void alt_eth_emac_hps_init(uint32_t instance){
-
-    if (instance > 1) { return; }
-
-    ALT_STATUS_CODE status = ALT_E_SUCCESS;
-
-     
-    //step1./* Reset the EMAC */
-    alt_setbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
-    
-    /* Program the phy_intf_sel field of the emac* register in the System Manager to select
-       RGMII PHY interface. */
-    //reg: sysmgr.ctrl @ physel_0/1
-    printf( "Hufei: check ALT_RSTMGR_PERMODRST_ADDR\r\n" );
-    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
-    //step2 is already the right value by default.
-    //step3. bring phy out of reset.
-    status = alt_eth_phy_reset(instance);
-    
-    if (status != ALT_E_SUCCESS) { 
-        printf( "ERROR: Hufei: PHY reset unsuccessful\r\n" );
-        return ;
-    }
-    //step4. configure sysmgr registers
-     alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR,
-               Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  
-               ALT_SYSMGR_EMAC_CTL_PHYSEL_1_E_RGMII); //bug here it was mistaken as PHYSEL_0
 
 
+void dmaInit(uint32_t instance) {
 
-                    
-    /* Disable the Ethernet Controller FPGA interface by clearing the emac_* bit in the fpgaintf_en_3
-      register of the System Manager. */
-    //reg: 
-    //  alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[instance]); 
-    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[0]);           
-    alt_clrbits_word(ALT_SYSMGR_FPGAINTF_MODULE_ADDR, Alt_Sysmgr_Fpgaintf_Module_Emac_Set_Msk[1]);           
-    //step6. 
-    printf( "Hufei: check RST and SYS MGR reg values\r\n" );
-    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
-    alt_dbg_reg("ALT_SYSMGR_EMAC_CTL_ADDR",ALT_SYSMGR_EMAC_CTL_ADDR);
-    //step7. clear reset bit of emac
-    /* clear the emac* bit in the permodrst register of
-       the Reset Manager to bring the EMAC out of reset. */
-    alt_clrbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
-    
-    //alt_eth_delay(20000*2000);
 }
+void emacInit(uint32_t instance) {
+    
+
+}
+
+
 
 
 
