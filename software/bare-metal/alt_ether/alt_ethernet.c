@@ -66,7 +66,7 @@ void alt_dbg_reg(const char *name, void *addr) {
 
 
 
-
+//#define ALT_EMAC1_DMAGRP_ADDR        ALT_CAST(void *, (ALT_CAST(char *, ALT_EMAC1_ADDR) + ALT_EMAC1_DMAGRP_OFST))
  
 /* Lookup tables for the emac registers 
    Cooresponding to Emac0, Emac1, and Emac 2 */
@@ -806,7 +806,7 @@ alt_eth_set_reset_state_t alt_eth_get_software_reset_status(uint32_t instance)
     
     if (instance > 2) { return bitstatus; }    
     
-    if(ALT_EMAC_DMA_BUS_MOD_SWR_GET(alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]))))
+    if(ALT_EMAC_DMA_BUS_MOD_SWR_GET(alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]))))
     {
         bitstatus = ALT_ETH_SET;
     }
@@ -822,19 +822,22 @@ ALT_STATUS_CODE alt_eth_software_reset(uint32_t instance)
 {
     unsigned int i;
     uint32_t val;
+    uint32_t addr;
     
     if (instance > 2) { return ALT_E_ERROR; }    
     
     /* Set the SWR bit: resets all MAC subsystem internal registers and logic */
     /* After reset all the registers holds their respective reset values */
-    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]));
-    printf("DBG: DMA_MOD_REG=%u\r\n",val);
+    addr = (uint32_t)ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]);
+    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: Addr: 0x%08x,DMA_MOD_REG=%u\r\n",addr,val);
 
-    alt_setbits_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]), 
+    alt_setbits_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]), 
                      ALT_EMAC_DMA_BUS_MOD_SWR_SET_MSK);
 
-    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]));
-    printf("DBG: DMA_MOD_REG=%u\r\n",val);
+    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: Addr: 0x%08x,DMA_MOD_REG=%u\r\n",addr,val);
+
     
                         
     /* Wait for the software reset to clear */

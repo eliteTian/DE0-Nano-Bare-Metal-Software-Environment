@@ -33,7 +33,7 @@
 //#define ALT_RSTMGR_ADDR (0xFFD05000)
 #define ALT_RSTMGR_PERMODRST_OFST (0x14)
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
-
+#define ETH_TEST
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
@@ -51,154 +51,55 @@ static uint8_t dsp_arr[4096];
 void clkMgrTest(void);
 void rstMgrTest(void);
 
-
 void ledTest(void);
 void fpgaTest(void);
 void fpgaCustomTest(void);
+void ethDbg(void);
 
 ALT_STATUS_CODE socfpga_bridge_io(void);
 ALT_STATUS_CODE socfpga_int_start(void);
 ALT_STATUS_CODE socfpga_watchdog_start(ALT_WDOG_TIMER_t tmr_id, ALT_WDOG_RESET_TYPE_t type,  uint32_t val);
+ALT_STATUS_CODE bridgeTest(void);
+ALT_STATUS_CODE watchDogInit(void);
+
 
 
 int main(void) {
     //set a variable to hold status of each operation
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
-
-    //status = alt_clk_clkmgr_init(); 
-    //clock manager has been initalized by uboot, leave it.
-
-    //if (status != ALT_E_SUCCESS) {
-    //    ALT_PRINTF("ERROR: CLOCK_INIT failed, %" PRIi32 ".\n", status);
-    //} else {
-    //    ALT_PRINTF("SUCCESS: CLOCK_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
-    //}
-
- 
     //initialize uart by passing the term0_info address to init function       
     status = init_uart(&term0_info);
-    
     if (status != ALT_E_SUCCESS) {
         ALT_PRINTF("ERROR: UART_INIT failed, %" PRIi32 ".\n", status);
     } else {
         ALT_PRINTF("SUCCESS: UART_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
     }
 
-    ALT_BRIDGE_t bridge = ALT_BRIDGE_LWH2F;
-    status = alt_bridge_init(bridge, NULL, NULL);
-
-    if (status != ALT_E_SUCCESS) {
-        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT LWH2F failed, %" PRIi32 ".\n", status);
-    } else {
-        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT LWH2F SUCCESSFUL, %" PRIi32 ".\n", status);
-    }
-
-     bridge = ALT_BRIDGE_F2H;
-    status = alt_bridge_init(bridge, NULL, NULL);
-
-    if (status != ALT_E_SUCCESS) {
-        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT F2H failed, %" PRIi32 ".\n", status);
-    } else {
-        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT F2H SUCCESSFUL, %" PRIi32 ".\n", status);
-    }
-
-     bridge = ALT_BRIDGE_H2F;
-    status = alt_bridge_init(bridge, NULL, NULL);
-
-    if (status != ALT_E_SUCCESS) {
-        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT H2F failed, %" PRIi32 ".\n", status);
-    } else {
-        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT H2F SUCCESSFUL, %" PRIi32 ".\n", status);
-    }
-
-    status = socfpga_bridge_io();
-
-
-
 
     //dbgReg(0xFFD08568);
 	//mysleep(2000*1000);
 
     //enable watchdog to do a warm reset upon timeout
-    ALT_WDOG_TIMER_t watchdog = ALT_WDOG0_INIT;
-
-    ALT_WDOG_RESET_TYPE_t reset_mode = ALT_WDOG_WARM_RESET;
-
-    uint32_t timer_val = 14;
-    uint32_t curr_val;
-    status = socfpga_watchdog_start(watchdog,reset_mode,timer_val);
-    if (status != ALT_E_SUCCESS){
-        ALT_PRINTF("ERROR: socfpga_watchdog_start failed, %" PRIi32 ".\n", status);
-    } else {
-        ALT_PRINTF("SUCCESS: socfpga_watchdog_start success, %" PRIi32 ".\n", status);
-    }
-    curr_val = alt_wdog_counter_get_current(watchdog);
-    ALT_PRINTF("SUCCESS: WATCHDOG current counter value is , %" PRIi32 ".\n", curr_val);
-    fpgaCustomTest();      
-    clkMgrTest();
+    watchDogInit();
+    //clkMgrTest();
+    //fpgaCustomTest();      
     //rstMgrTest();
-    curr_val = alt_read_word(0xFFD05000);
-
-    ALT_PRINTF("SUCCESS: RST STATUS REGISTER is %" PRIi32 ".\n", curr_val);
     //fpgaTest();
-
     //ledTest();
-    
-    //return 0;
 
-    
+    //curr_val = alt_read_word(0xFFD05000);
+    //ALT_PRINTF("SUCCESS: RST STATUS REGISTER is %" PRIi32 ".\n", curr_val);
+     
     //ethernet module test, including init
 #ifdef ETH_TEST
     eth_main(&emac1);
+    ethDbg();
 #endif
 
     if (status == ALT_E_SUCCESS)
     {
         status = socfpga_int_start();
     }
-
-    if (status == ALT_E_SUCCESS) {
-        ALT_PRINTF("SUCCESS: socfpga_int_start() finished, interrupt init done, %" PRIi32 ".\n", status);
-    }
-    
-    //dbgReg(0xFFD04060);
-    //dbgReg(0xFFD040A0);
-
-    //dbgReg(0xFF703000);
-    //dbgReg(0xFF703004);
-    //dbgReg(0xFF703008);
-    //dbgReg(0xFF703014);
-    //dbgReg(0xFF703018);
-    //dbgReg(0xFF70301C);
-    //dbgReg(0xFF703028);
-    //dbgReg(0xFF703058);
-
-    //printf( "System manager emac group\n" );
-    //dbgReg( 0xFFD08060);
-    //dbgReg( 0xFFD08064);
-    //printf( "Clock manager perkph group\n" );
-    //for( k = 0; k< 13; k++) {
-    //    dbgReg( 0xFFD04080 + 4*k);
-    //}
-    //printf( "Clock manager makn group\n" );
-    //for( k = 0; k< 14; k++) {
-    //    dbgReg( 0xFFD04040 + 4*k);
-    //}
-    //printf( "Clock manager module group\n" );
-    //for( k = 0; k< 6; k++) {
-    //    dbgReg( 0xFFD04000 + 4*k);
-    //}
-    //printf( "RST manager module group\n" );
-    //for( k = 0; k< 8; k++) {
-    //    if(k!=3) {
-    //        dbgReg( 0xFFD05000 + 4*k);
-    //    }
-    //}
-    //printf( "Pkn Mux group\n" );
-    //for( k = 0; k< 20; k++) {
-    //    dbgReg( 0xFFD08400 + 4*k);
-    //}
-
 
     
 	return( 0 );
@@ -327,6 +228,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     printf( "SUCCESS: gmac eth1 link state after config is 0x%08x\r\n",(unsigned int)stat );
     //send packet
     printf( "Hufei: get ready to send packet\r\n" );
+    mysleep(80000*1000);
     for( i=0;i<1;i++) {
         //mysleep(5000*1000);
         //for (j = 0; j < 32; j++) {
@@ -727,8 +629,6 @@ void fpgaCustomTest(void){
             printf(",");
         }
 
-
-
     }
 
 
@@ -787,5 +687,122 @@ ALT_STATUS_CODE socfpga_int_start(void)
     }
 
     return status;
+}
+
+
+ALT_STATUS_CODE bridgeTest(void){
+
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+
+    ALT_BRIDGE_t bridge = ALT_BRIDGE_LWH2F;
+    status = alt_bridge_init(bridge, NULL, NULL);
+
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT LWH2F failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT LWH2F SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+     bridge = ALT_BRIDGE_F2H;
+    status = alt_bridge_init(bridge, NULL, NULL);
+
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT F2H failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT F2H SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+     bridge = ALT_BRIDGE_H2F;
+    status = alt_bridge_init(bridge, NULL, NULL);
+
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT H2F failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT H2F SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+    status = socfpga_bridge_io();
+
+    return status;
+}
+
+
+ALT_STATUS_CODE watchDogInit(void){
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;    
+    ALT_WDOG_TIMER_t watchdog = ALT_WDOG0_INIT;
+    ALT_WDOG_RESET_TYPE_t reset_mode = ALT_WDOG_WARM_RESET;
+    uint32_t timer_val = 14;
+    uint32_t curr_val;
+    status = socfpga_watchdog_start(watchdog,reset_mode,timer_val);
+    if (status != ALT_E_SUCCESS){
+        ALT_PRINTF("ERROR: socfpga_watchdog_start failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: socfpga_watchdog_start success, %" PRIi32 ".\n", status);
+    }
+    curr_val = alt_wdog_counter_get_current(watchdog);
+    ALT_PRINTF("SUCCESS: WATCHDOG current counter value is , %" PRIi32 ".\n", curr_val);
+    return status;
+}
+
+
+void ethDbg(void){
+    
+    //dbgReg(0xFFD04060);
+    //dbgReg(0xFFD040A0);
+
+    //dbgReg(0xFF703000);
+    //dbgReg(0xFF703004);
+    //dbgReg(0xFF703008);
+    //dbgReg(0xFF703014);
+    //dbgReg(0xFF703018);
+    //dbgReg(0xFF70301C);
+    //dbgReg(0xFF703028);
+    //dbgReg(0xFF703058);
+
+    //printf( "System manager emac group\n" );
+    //dbgReg( 0xFFD08060);
+    //dbgReg( 0xFFD08064);
+    //printf( "Clock manager perkph group\n" );
+    //for( k = 0; k< 13; k++) {
+    //    dbgReg( 0xFFD04080 + 4*k);
+    //}
+    //printf( "Clock manager makn group\n" );
+    //for( k = 0; k< 14; k++) {
+    //    dbgReg( 0xFFD04040 + 4*k);
+    //}
+    //printf( "Clock manager module group\n" );
+    //for( k = 0; k< 6; k++) {
+    //    dbgReg( 0xFFD04000 + 4*k);
+    //}
+    //printf( "RST manager module group\n" );
+    //for( k = 0; k< 8; k++) {
+    //    if(k!=3) {
+    //        dbgReg( 0xFFD05000 + 4*k);
+    //    }
+    //}
+    //printf( "Pkn Mux group\n" );
+    //for( k = 0; k< 20; k++) {
+    //    dbgReg( 0xFFD08400 + 4*k);
+    //}
+
+    //MAC_Configuration
+    dbgReg(0xFF702000);
+    //Version
+    dbgReg(0xFF702020);
+    //Debug
+    dbgReg(0xFF702024);
+    //
+    //SGMII_RGMII_SMII_Control_Status
+    dbgReg(0xFF7020d8);
+    //Busmode
+    dbgReg(0xFF703000);
+    //Status
+    dbgReg(0xFF703014);
+    //Operation_Mode
+    dbgReg(0xFF703018);
+    //AXI_Bus_Mode
+    dbgReg(0xFF703028);
+
 }
 
