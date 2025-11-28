@@ -188,16 +188,28 @@ void emacHPSIFInit(uint32_t instance){
     //2. Configure the EMAC Controller clock to 250 MHz by programming the appropriate cnt value in the emac*clk register in the Clock Manager.
     //Done by U-boot/Preloader
     //3. Bring the Ethernet PHY out of reset to verify that there are RX PHY clocks.
-    status = alt_eth_phy_reset(instance);
-    if (status != ALT_E_SUCCESS) { 
-        printf( "ERROR: Hufei: PHY reset unsuccessful\r\n" );
-        return ;
-    }
-    //TODO: why here you can't configure PHY, before EMAC deassert reset?
-    status = alt_eth_phy_config(instance);
-    if (status != ALT_E_SUCCESS) { 
-        printf( "ERROR: Hufei: PHY config unsuccessful\r\n" );
-    }
+    //The description in the doc is not correct here above, emac1 rst bit in the rst manager has to be cleared before MIIM IF can be functional.
+    //so this step 3 is commented out. Register content was checked and confirmed MIIM is not functional when emac1 rst bit is asserted.
+    //status = alt_eth_phy_reset(instance);
+    //if (status != ALT_E_SUCCESS) { 
+    //    printf( "ERROR: PHY reset unsuccessful\r\n" );
+    //    return ;
+    //} else {
+    //    printf( "Hufei: PHY reset successful\r\n" );
+    //}
+    //alt_eth_delay(100000000);
+    
+    //TODO: Q: why here you can't configure PHY, before EMAC deassert reset? A: It's because rst has to be deasserted.
+    //NOTE 2: After the de-assertion of reset, wait a minimum of 100µs before starting programming on the MIIM (MDC/MDIO) interface.
+    //alt_eth_delay(100000); //clock speed is 925M, close to 1G, so t cycle is close to 1ns. each cpu cycle is more than 1 clk cycle, so safe.
+    //status = alt_eth_phy_config(instance);
+    //if (status != ALT_E_SUCCESS) { 
+    //    printf( "ERROR: PHY config unsuccessful\r\n" );
+    //} else {
+    //    printf( "Hufei: PHY config Done\r\n" );
+    //}
+
+
 
 
     //4. When all the clocks are valid, program the following clock settings
@@ -215,28 +227,77 @@ void emacHPSIFInit(uint32_t instance){
 #endif
     //7.After confirming the settings are valid, software can clear the emac bit in the permodrst register of the Reset Manager to bring the EMAC out of reset..
     alt_clrbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);    
+    //true reset happening here
+    status = alt_eth_phy_reset(instance);
+    if (status != ALT_E_SUCCESS) { 
+        printf( "ERROR: PHY reset unsuccessful\r\n" );
+        return ;
+    } else {
+        printf( "Hufei: PHY reset successful\r\n" );
+    }
+    alt_eth_delay(1000000);
+
     //Note* PHY can't be configured when EMAC is in reset. 
     status = alt_eth_phy_config(instance);
     if (status != ALT_E_SUCCESS) { 
         printf( "ERROR: Hufei: PHY config unsuccessful\r\n" );
         return ;
     } else {
-        printf( "ERROR: Hufei: PHY config Done\r\n" );
+        printf( "Hufei: PHY config Done\r\n" );
     }
 
     
-    status = alt_eth_software_reset(instance);
-    if (status != ALT_E_SUCCESS) { 
-        printf( "Hufei: Ethenet soft reset not successful\r\n" );
-        return;
-    }    
-
 }
 
 
 
 
 void dmaInit(uint32_t instance) {
+    if (instance > 1) { return; }
+    
+    uint32_t dbg_addr, dbg_data;
+    
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    status = alt_eth_software_reset(instance);
+    
+    //1.Provide a software reset to reset all of the EMAC internal registers and logic. (DMA Register 0 (Bus Mode Register) – bit 0).
+    //2. Wait for the completion of the reset process (poll bit 0 of the DMA Register 0 (Bus Mode Register), 
+    // which is only cleared after the reset operation is completed).
+    if (status != ALT_E_SUCCESS) { 
+        printf( "ERROR: Ethenet soft reset not successful\r\n" );
+        return;
+    }  
+    //3.Poll the bits of Register 11 (AHB or AXI Status) to confirm that all previously initiated (before
+    //software reset) or ongoing transactions are complete      
+    if (alt_read_word(ALT_EMAC_DMA_AHB_OR_AXI_STAT_ADDR(Alt_Emac_Dma_Grp_Addr[instance])) != 0) {
+        return;
+    }
+    //4.Program the following fields to initialize the Bus Mode Register by setting values in DMA Register 0
+    // Set the DMA Bus Mode Register
+ 
+    dbg_addr = (uint32_t) (ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    dbg_data = alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+
+    //alt_write_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]), //need to use replace bits than direct write
+    //    (tmpreg
+    //      /*| ALT_EMAC_DMA_BUS_MOD_USP_SET_MSK      */     /* Use separate PBL */ 
+    //      /*| ALT_EMAC_DMA_BUS_MOD_AAL_SET_MSK      */     /* Address Aligned Beats */
+    //      /*| ALT_EMAC_DMA_BUS_MOD_EIGHTXPBL_SET(1) */
+    //      /*| ALT_EMAC_DMA_BUS_MOD_PBL_SET(8)       */     /* Programmable Burst Length */
+    //      /*| ALT_EMAC_DMA_BUS_MOD_RPBL_SET(8)      */     /* Programmable Burst Length */
+    //        | ALT_EMAC_DMA_BUS_MOD_FB_SET_MSK              /* Fixed Burst */
+    //    )); 
+    
+ 
+    dbg_addr = (uint32_t) (ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    dbg_data = alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
+    printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+    
+    
+    //5.Program the interface options in Register 10 (AXI Bus Mode Register). If fixed burst-length is enabled,
+    //then select the maximum burst-length possible on the bus (bits[7:1]).†
+
 
 }
 void emacInit(uint32_t instance) {
@@ -888,7 +949,7 @@ ALT_STATUS_CODE alt_eth_software_reset(uint32_t instance)
 
     }
 
-    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Addr[instance]));
+    val=alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
     printf("DBG: DMA_MOD_REG=%u\r\n",val);
     
     if (i==10) { return ALT_E_ERROR; }

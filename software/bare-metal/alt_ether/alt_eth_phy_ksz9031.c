@@ -268,12 +268,13 @@ ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_r
     return ALT_E_SUCCESS;
 }
 
-
+//TODO: if EMAC is in reset, can this function work?
 ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_reg, uint32_t phy_value)
 {
     uint32_t tmpreg = 0;     
     volatile uint32_t timeout = 0;
     uint32_t phy_addr;
+    //uint32_t dbg_addr, dbg_data;
     
     if (emac_instance > 1) { return  ALT_E_ERROR; }    
     
@@ -293,9 +294,18 @@ ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_
     tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GB_SET(ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK);
     /* Give the value to the MII data register */
     alt_write_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]), phy_value & 0xffff);
+        //check so-called write
+        //dbg_addr = (uint32_t)ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]);
+        //dbg_data = alt_read_word((uint32_t*)dbg_addr);
+        //printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+
     /* Write the result value into the MII Address register */
     alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
-    
+        //check so-called write
+        //dbg_addr = (uint32_t)ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]);
+        //dbg_data = alt_read_word((uint32_t*)dbg_addr);
+        //printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
+
     /* Check the Busy flag */
     do
     {

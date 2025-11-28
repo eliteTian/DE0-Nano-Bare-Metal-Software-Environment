@@ -58,7 +58,6 @@ extern "C"
    This file supports the cv de0-nano board.   The parameters which may change based on board follow: */
 #define EMAC0_PHY_ADDRESS               (0)
 #define EMAC1_PHY_ADDRESS               (1)   /* no phy */
-#define EMAC2_PHY_ADDRESS               (0)   /* no phy */ 
 
 /* Micrel KSZ9031 Extended registers */           
 #define PHY_CONTROL_PAD_SKEW_REG        (4)
@@ -69,6 +68,26 @@ extern "C"
 #define PHY_TX_DATA_PAD_SKEW_VALUE      (0x0) 
 #define PHY_CLK_PAD_SKEW_REG            (8)
 #define PHY_CLK_PAD_SKEW_VALUE          (0x3FC) 
+//&gmac1 {
+//	status = "okay";
+//	phy-mode = "rgmii";
+//
+//	txd0-skew-ps = <0>; /* -420ps */
+//	txd1-skew-ps = <0>; /* -420ps */
+//	txd2-skew-ps = <0>; /* -420ps */
+//	txd3-skew-ps = <0>; /* -420ps */
+//	rxd0-skew-ps = <420>; /* 0ps */
+//	rxd1-skew-ps = <420>; /* 0ps */
+//	rxd2-skew-ps = <420>; /* 0ps */
+//	rxd3-skew-ps = <420>; /* 0ps */
+//	txen-skew-ps = <0>; /* -420ps */
+//	txc-skew-ps = <1860>; /* 960ps */
+//	rxdv-skew-ps = <420>; /* 0ps */
+//	rxc-skew-ps = <1680>; /* 780ps */
+//
+//	max-frame-size = <3800>;
+//};
+
 
 /* Auto-Negotiation FLP burst transmit timing */
 #define PHY_MMD_D0_FLP_LO_REG           (3)

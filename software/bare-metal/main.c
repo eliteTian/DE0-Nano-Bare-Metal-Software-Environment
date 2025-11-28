@@ -224,7 +224,8 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     //alt_eth_emac_dma_init(emac->instance);
     alt_eth_emac_dma_init(emac->instance);
     mysleep(100000*1000);
-
+    return 0;
+    
     alt_eth_dma_mac_config(emac);
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
     printf( "SUCCESS: gmac eth1 link state after config is 0x%08x\r\n",(unsigned int)stat );
