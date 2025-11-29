@@ -46,7 +46,7 @@
     #define dprintf null_printf
 #endif
 
-extern void * Alt_Emac_Addr[];
+extern void * Alt_Emac_Gmac_Grp_Addr[];
 
 static const uint32_t Phy_Addr[] = {
     EMAC0_PHY_ADDRESS,
@@ -247,13 +247,13 @@ ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_r
     /* Set the MII Busy bit */
     tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GB_SET(ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK);
     /* Write the result value into the MII Address register */
-    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
+    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]), tmpreg & 0xffff);
     
     /* Check the Busy flag */
     do
     {
         timeout++;
-        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]));
+        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]));
     } while ((tmpreg & ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK) && (timeout < PHY_READ_TO));
     
     /* Return ERROR in case of timeout */
@@ -263,7 +263,7 @@ ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_r
     }
     
     /* Return data register value */
-    *rdval = alt_read_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]));
+    *rdval = alt_read_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]));
     
     return ALT_E_SUCCESS;
 }
@@ -293,16 +293,16 @@ ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_
     /* Set the MII Busy bit */
     tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GB_SET(ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK);
     /* Give the value to the MII data register */
-    alt_write_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]), phy_value & 0xffff);
+    alt_write_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]), phy_value & 0xffff);
         //check so-called write
-        //dbg_addr = (uint32_t)ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Addr[emac_instance]);
+        //dbg_addr = (uint32_t)ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]);
         //dbg_data = alt_read_word((uint32_t*)dbg_addr);
         //printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
 
     /* Write the result value into the MII Address register */
-    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]), tmpreg & 0xffff);
+    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]), tmpreg & 0xffff);
         //check so-called write
-        //dbg_addr = (uint32_t)ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]);
+        //dbg_addr = (uint32_t)ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]);
         //dbg_data = alt_read_word((uint32_t*)dbg_addr);
         //printf("DBG: Addr: 0x%08x,Data=%u\r\n",dbg_addr,dbg_data);
 
@@ -310,7 +310,7 @@ ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_
     do
     {
         timeout++;
-        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Addr[emac_instance]));
+        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]));
     } while ((tmpreg & ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK) && (timeout < PHY_WRITE_TO));
     
     /* Return ERROR in case of timeout */

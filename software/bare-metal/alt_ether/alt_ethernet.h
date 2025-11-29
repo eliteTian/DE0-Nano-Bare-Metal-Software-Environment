@@ -52,8 +52,8 @@ extern "C"
 //#define NUMBER_OF_RX_DESCRIPTORS  32
 //#define ETH_BUFFER_SIZE           1536
 
-#define NUMBER_OF_TX_DESCRIPTORS  1
-#define NUMBER_OF_RX_DESCRIPTORS  1
+#define NUMBER_OF_TX_DESCRIPTORS  4
+#define NUMBER_OF_RX_DESCRIPTORS  4
 #define ETH_BUFFER_SIZE           128 
 
 typedef enum
@@ -441,7 +441,7 @@ void alt_eth_delay(volatile uint32_t delay);
  */
 void alt_eth_reset_mac(uint32_t instance);
 void alt_eth_emac_hps_init(uint32_t instance);
-void alt_eth_emac_dma_init(uint32_t instance);
+void alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac);
 /******************************************************************************/
 /*!
  * Initalizes the RX Descriptor ring
@@ -1038,7 +1038,7 @@ ALT_STATUS_CODE alt_eth_phy_get_duplex_and_speed(uint32_t * phy_duplex_status, u
 void systemConfig(uint32_t instance);
 
 void emacHPSIFInit(uint32_t instance);
-void dmaInit(uint32_t instance);
+void dmaInit(alt_eth_emac_instance_t * emac);
 void emacInit(uint32_t instance);
 
 

@@ -222,7 +222,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     emac->instance = 1;
     //alt_eth_emac_hps_init(emac->instance);
     //alt_eth_emac_dma_init(emac->instance);
-    alt_eth_emac_dma_init(emac->instance);
+    alt_eth_emac_dma_init(emac);
     mysleep(100000*1000);
     return 0;
     
