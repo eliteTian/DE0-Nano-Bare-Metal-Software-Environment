@@ -52,8 +52,8 @@ extern "C"
 //#define NUMBER_OF_RX_DESCRIPTORS  32
 //#define ETH_BUFFER_SIZE           1536
 
-#define NUMBER_OF_TX_DESCRIPTORS  4
-#define NUMBER_OF_RX_DESCRIPTORS  4
+#define NUMBER_OF_TX_DESCRIPTORS  2
+#define NUMBER_OF_RX_DESCRIPTORS  2
 #define ETH_BUFFER_SIZE           128 
 
 typedef enum
@@ -1039,7 +1039,7 @@ void systemConfig(uint32_t instance);
 
 void emacHPSIFInit(uint32_t instance);
 void dmaInit(alt_eth_emac_instance_t * emac);
-void emacInit(uint32_t instance);
+void emacInit(alt_eth_emac_instance_t * emac);
 
 
 #ifdef __cplusplus

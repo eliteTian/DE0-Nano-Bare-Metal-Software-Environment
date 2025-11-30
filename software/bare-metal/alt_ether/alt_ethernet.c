@@ -157,7 +157,7 @@ void alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac){
     systemConfig(emac->instance); 
     emacHPSIFInit(emac->instance);
     dmaInit(emac);
-    emacInit(emac->instance);
+    emacInit(emac);
 }
 
 void systemConfig(uint32_t instance) {
@@ -337,8 +337,8 @@ void dmaInit(alt_eth_emac_instance_t * emac) {
 }
 
 
-void emacInit(uint32_t instance) {
-    if (instance > 1) { return; }
+void emacInit(alt_eth_emac_instance_t * emac) {
+    if (emac->instance > 1) { return; }
     uint32_t alt_mac_config_reg_settings = 0;
     uint32_t phy_duplex_status, phy_speed;
     ALT_STATUS_CODE status = ALT_E_SUCCESS;    
@@ -353,7 +353,7 @@ void emacInit(uint32_t instance) {
                                    );  
     
     /* Configure the MAC with the Duplex Mode fixed by the auto-negotiation process */
-    status = alt_eth_phy_get_duplex_and_speed(&phy_duplex_status, &phy_speed, instance);
+    status = alt_eth_phy_get_duplex_and_speed(&phy_duplex_status, &phy_speed, emac->instance);
     if (status != ALT_E_SUCCESS) { return ; }
     
     if (phy_duplex_status != ALT_ETH_RESET)
@@ -378,9 +378,41 @@ void emacInit(uint32_t instance) {
     } 
     
     printf( "CRITICAL: GMAC config register to be written is 0x%08x,0x%08x,0x%08x  \r\n",alt_mac_config_reg_settings,phy_speed,phy_duplex_status );
+    alt_write_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]), alt_mac_config_reg_settings);
+        /* Disable promiscuous mode */
+    alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),1, 0);  
+       
+    /* Initialize the ethernet irq handler */   
+    alt_eth_irq_init(emac, alt_eth_irq_callback);
 
+    //alt_eth_start(emac->instance);
 
-
+    //CRITICAL: GMAC config register to be written is 0x00e08c00,0x000003e8,0x00000001  
+    //GMAC_CONFIG status before eth_start:  0x00e08c00
+    //DMA_OPMODE status before eth_start:  0x00000000
+    //DMA_STATUS status before eth_start:  0x04000000
+    //DBG: Transmit descriptor addr to be read from dma is 0x0011d18c !
+    //DBG: the RX descriptor addr previously set to dma is 0x0011d1cc !
+    //CLKmanager: clock enable status are, we will enable emac1 bit  0x00000fff
+    //GMAC_CONFIG status after eth_start:  0x00e08c0c
+    //DMA_OPMODE status after eth_start:  0x00002002
+    //DMA_STATUS status after eth_start:  0x0011d18c 0x0000 0000 0001 0001 1101 0001 1000 1100
+    //DBG: Transmit descriptor addr to be read from dma after eth_start is 0x0011d18c !
+    //DBG: the RX descriptor addr previously set to dma after eth_start is 0x0011d1cc !
+    //
+    //
+    //GMAC_CONFIG status before eth_start:  0x00e0cc0c
+    //DMA_OPMODE status before eth_start:  0x00002002
+    //DMA_STATUS status before eth_start:  0x00670405
+    //DBG: Transmit descriptor addr to be read from dma is 0x0011d17c !
+    //DBG: the RX descriptor addr previously set to dma is 0x0011d19c !
+    //CLKmanager: clock enable status are, we will enable emac1 bit  0x00000fff
+    //GMAC_CONFIG status after eth_start:  0x00e0cc0c
+    //DMA_OPMODE status after eth_start:  0x00002002
+    //DMA_STATUS status after eth_start:  0x0011d17c
+    //DBG: Transmit descriptor addr to be read from dma after eth_start is 0x0011d17c !
+    //DBG: the RX descriptor addr previously set to dma after eth_start is 0x0011d19c !
+//
 }
 
 
@@ -692,10 +724,10 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),1, 0);  
        
     /* Initialize the ethernet irq handler */   
-    //alt_eth_irq_init(emac, alt_eth_irq_callback);
+    alt_eth_irq_init(emac, alt_eth_irq_callback);
     
     /* Start the receive and transmit DMA */
-    alt_eth_start(emac->instance);
+    //alt_eth_start(emac->instance);
     
     /* Return Ethernet configuration success */
     return ALT_E_SUCCESS;
@@ -784,7 +816,7 @@ void alt_eth_start(uint32_t instance){
     stat = alt_read_word( ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
     printf( "DMA_OPMODE status after eth_start:  0x%08x\n", stat );
     
-    stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR  (Alt_Emac_Dma_Grp_Addr[instance]));
+    stat = alt_read_word(ALT_EMAC_DMA_STAT_ADDR  (Alt_Emac_Dma_Grp_Addr[instance]));
     printf( "DMA_STATUS status after eth_start:  0x%08x\n", stat );
 
     stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
@@ -792,6 +824,8 @@ void alt_eth_start(uint32_t instance){
 
     stat = alt_read_word(ALT_EMAC_DMA_RX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
     printf("DBG: the RX descriptor addr previously set to dma after eth_start is 0x%08x !\n",stat);
+
+    alt_eth_dma_flush_tx_fifo(instance);
     
     
 }
@@ -1247,7 +1281,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     
     alt_eth_dma_desc_t *tx_desc;
     printf("DBG: emac addr=%p\n",emac);
-    //uint32_t * txbuf;
+    uint32_t * txbuf;
     int32_t index=0;
     unsigned int i;
     int32_t paranoid=NUMBER_OF_TX_DESCRIPTORS+1;
@@ -1285,10 +1319,10 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     alt_eth_delay(128);
     //printf("DBG: Data copied over!\r\n");
 
-    //txbuf = (uint32_t*)&emac->tx_buf;
-    //for (i = 0; i < 32; i++) {
-    //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
-    //}
+    txbuf = (uint32_t*)&emac->tx_buf;
+    for (i = 0; i < 32; i++) {
+        printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
+    }
 
 
 
