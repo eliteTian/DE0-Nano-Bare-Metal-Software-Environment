@@ -14,6 +14,9 @@
 #include "alt_bridge_manager.h"
 #include "hps_0.h"
 #include "fpga_dsp.h"
+#include "alt_cache.h"
+
+
 
 
 #define HW_REGS_BASE ( ALT_STM_OFST )
@@ -73,6 +76,13 @@ int main(void) {
         ALT_PRINTF("ERROR: UART_INIT failed, %" PRIi32 ".\n", status);
     } else {
         ALT_PRINTF("SUCCESS: UART_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
+
+    status = alt_cache_l2_init();
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: CACHE_INIT failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: CACHE_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
     }
 
 
@@ -207,16 +217,16 @@ int eth_main(alt_eth_emac_instance_t* emac) {
 
 
     uint8_t test_frame[80] = {
-        //ASUSTekCOMPU_:
+        //ASUSTekCOMPU_: //6bytes
         0x24,0x4b,0xfe,0xe0,0xef,0x05,
-        //Altera_:
+      //   0xff,0xff,0xff,0xff,0xff,0xff,
+        //Altera_: //6bytes
          0x00,0x07,0xed,0x42,0x9a,0x48,
         // EtherType = 0x0800 (IPv4)
-        0x08,0x00,
-        // Payload: 46 bytes filler
+        0x08,0x00, //2 bytes
+        // Payload: 68 bytes filler
         'T','e','s','t',' ','f','r','a','m','e',' ','f','r','o','m',' ',
         'D','E','-','N','a','n','o',' ','E','M','A','C','!',' ','1','2',
-        '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!',
         '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!'
         
     };
@@ -231,7 +241,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     printf( "SUCCESS: gmac eth1 link state after config is 0x%08x\r\n",(unsigned int)stat );
     //send packet
     printf( "Hufei: get ready to send packet\r\n" );
-    for( i=0;i<;i++) {
+    for( i=0;i<1;i++) {
         //mysleep(5000*1000);
         //for (j = 0; j < 32; j++) {
         //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", j, tx_buf_p[j]);
@@ -242,7 +252,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
         //}
 
         mysleep(1000*1000);
-        alt_eth_send_packet(test_frame, 80, 1, 1, emac);
+        alt_eth_send_packet(test_frame, 64, 1, 1, emac);
         mysleep(5000*1000);
 
 
@@ -806,6 +816,9 @@ void ethDbg(void){
     dbgReg(0xFF703018);
     //AXI_Bus_Mode
     dbgReg(0xFF703028);
-
+     //AXI_Bus_Mode
+    dbgReg(0xFF702164); 
+    //AXI_Bus_Mode
+    dbgReg(0xFF702168);
 }
 

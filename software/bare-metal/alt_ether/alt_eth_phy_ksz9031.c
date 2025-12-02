@@ -134,7 +134,9 @@ ALT_STATUS_CODE alt_eth_phy_config(uint32_t emac_instance)
     rc = alt_eth_phy_read_register(emac_instance, PHY_AUTON, &rdval);
     if (rc==ALT_E_ERROR) { return rc; }
     
-    rdval |= (PHYANA_10BASET | PHYANA_10BASETFD | PHYANA_100BASETX | PHYANA_100BASETXFD  | PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF  );
+    rdval |= (PHYANA_10BASET | PHYANA_10BASETFD | PHYANA_100BASETX | PHYANA_100BASETXFD  | PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF  ); //all speed
+   // rdval |= (PHYANA_10BASET | PHYANA_10BASETFD | PHYANA_100BASETX | PHYANA_100BASETXFD   ); // 100M max
+    
     rc = alt_eth_phy_write_register(emac_instance, PHY_AUTON, rdval);
     if (rc==ALT_E_ERROR) { return rc; }
       

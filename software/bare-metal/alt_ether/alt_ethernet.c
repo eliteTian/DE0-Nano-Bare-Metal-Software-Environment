@@ -44,6 +44,8 @@
 #include "socal/hps.h"
 #include "alt_interrupt.h"
 #include "alt_printf.h"
+#include "alt_cache.h"
+
 #define REG_DBG 
 
 #ifdef ALT_DEBUG_ETHERNET
@@ -121,8 +123,8 @@ void alt_eth_reset_mac(uint32_t instance)
     /* Program the phy_intf_sel field of the emac* register in the System Manager to select
        RGMII PHY interface. */
     //reg: sysmgr.ctrl @ physel_0/1
-    printf( "Hufei: check ALT_RSTMGR_PERMODRST_ADDR\r\n" );
-    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+    //printf( "Hufei: check ALT_RSTMGR_PERMODRST_ADDR\r\n" );
+    //alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
 
     
             //alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR,
@@ -143,9 +145,9 @@ void alt_eth_reset_mac(uint32_t instance)
        the Reset Manager to bring the EMAC out of reset. */
     alt_clrbits_word(ALT_RSTMGR_PERMODRST_ADDR, Alt_Rstmgr_Permodrst_Emac_Set_Msk[instance]);
     
-    printf( "Hufei: check RST and SYS MGR reg values\r\n" );
-    alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
-    alt_dbg_reg("ALT_SYSMGR_EMAC_CTL_ADDR",ALT_SYSMGR_EMAC_CTL_ADDR);
+    //printf( "Hufei: check RST and SYS MGR reg values\r\n" );
+    //alt_dbg_reg("ALT_RSTMGR_PERMODRST_ADDR",ALT_RSTMGR_PERMODRST_ADDR);
+    //alt_dbg_reg("ALT_SYSMGR_EMAC_CTL_ADDR",ALT_SYSMGR_EMAC_CTL_ADDR);
     //alt_eth_delay(20000*2000);
       
 }   
@@ -686,14 +688,12 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     if (phy_speed == 100)
     {
         /* Set Ethernet speed to 100M following the auto-negotiation */ 
-        alt_mac_config_reg_settings |= ALT_EMAC_GMAC_MAC_CFG_FES_SET_MSK;  
+        alt_mac_config_reg_settings |= (ALT_EMAC_GMAC_MAC_CFG_FES_SET_MSK | ALT_EMAC_GMAC_MAC_CFG_PS_SET_MSK);  
         dprintf("Auto Negotiation speed = 100\n");       
-    } 
-    
-    if (phy_speed == 1000)
+    } else if (phy_speed == 1000)
     {
         /* Set Ethernet speed to 1G following the auto-negotiation */ 
-        alt_mac_config_reg_settings |= ALT_EMAC_GMAC_MAC_CFG_PS_SET_MSK;     
+        alt_mac_config_reg_settings &= ALT_EMAC_GMAC_MAC_CFG_PS_CLR_MSK;     
         dprintf("Auto Negotiation speed = 1000\n"); 
     } 
     
@@ -769,30 +769,119 @@ void alt_eth_mac_set_rx_state(alt_eth_enable_disable_state_t new_state, uint32_t
     }
 }
 
+
+
+void dumpRegs(){
+    uint32_t stat,addr;
+    //stat=alt_read_word(((ALTX_EMAC_GMACGRP_MAC_CONFIGURATION_ADDR(Alt_Emac_Addr[instance]))));
+    //printf( "GMAC_CONFIG status before eth_start:  0x%08x\n", stat );
+    //fflush(stderr);
+
+
+
+    addr = 0xFF702000;
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702004;
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702010;
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702014;
+    stat = alt_read_word( addr);   
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702018;     
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF70201C; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702020; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702024; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);   
+
+    addr = 0xFF702038; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF70203C; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF7020D8; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702164; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702168; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF703000; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF70300C; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF703010; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    
+    addr = 0xFF703014; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    
+    addr = 0xFF703018; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    
+    addr = 0xFF70301C; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF703048; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    
+    addr = 0xFF70304C; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF703050; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    
+    addr = 0xFF703054; 
+    stat = alt_read_word( addr);
+    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    
+  
+
+
+
+}
+
+
 void alt_eth_start(uint32_t instance){
-
-    uint32_t stat;
-    stat = alt_read_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]));
-    printf( "GMAC_CONFIG status before eth_start:  0x%08x\n", stat );
-
-
-    stat = alt_read_word(ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf( "DMA_OPMODE status before eth_start:  0x%08x\n", stat );
-
-    stat = alt_read_word( ALT_EMAC_DMA_STAT_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf( "DMA_STATUS status before eth_start:  0x%08x\n", stat );
-    
-    stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf("DBG: Transmit descriptor addr to be read from dma is 0x%08x !\n",stat);
-
-    stat = alt_read_word(ALT_EMAC_DMA_RX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf("DBG: the RX descriptor addr previously set to dma is 0x%08x !\n",stat);
-
-    stat = alt_read_word (ALT_CLKMGR_PERPLL_EN_ADDR   );
-	printf(  "CLKmanager: clock enable status are, we will enable emac1 bit  0x%08x\n",stat );
-    alt_setbits_word ((ALT_CLKMGR_PERPLL_EN_ADDR  ) , ALT_CLKMGR_PERPLL_EN_EMAC1CLK_SET_MSK); 
-    
-    /* Enable transmit state machine of the MAC for transmission on the MII */  
+    dumpRegs();
+    printf("FIFO not flushed yet and bit not cleared!\r\n");
+     /* Enable transmit state machine of the MAC for transmission on the MII */  
     alt_eth_mac_set_tx_state(ALT_ETH_ENABLE, instance);
     
     /* Flush Transmit FIFO */
@@ -809,23 +898,7 @@ void alt_eth_start(uint32_t instance){
     
     alt_eth_delay(ETH_RESET_DELAY);
 
-    stat=alt_read_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]));
-    printf( "GMAC_CONFIG status after eth_start:  0x%08x\n", stat );
-
-
-    stat = alt_read_word( ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf( "DMA_OPMODE status after eth_start:  0x%08x\n", stat );
-    
-    stat = alt_read_word(ALT_EMAC_DMA_STAT_ADDR  (Alt_Emac_Dma_Grp_Addr[instance]));
-    printf( "DMA_STATUS status after eth_start:  0x%08x\n", stat );
-
-    stat = alt_read_word(ALT_EMAC_DMA_TX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf("DBG: Transmit descriptor addr to be read from dma after eth_start is 0x%08x !\n",stat);
-
-    stat = alt_read_word(ALT_EMAC_DMA_RX_DESC_LIST_ADDR_ADDR(Alt_Emac_Dma_Grp_Addr[instance]));
-    printf("DBG: the RX descriptor addr previously set to dma after eth_start is 0x%08x !\n",stat);
-
-    alt_eth_dma_flush_tx_fifo(instance);
+    dumpRegs();
     
     
 }
@@ -1291,7 +1364,9 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     printf("DBG: tx_desc=%p\n",tx_desc);
     uint32_t* tx_desc_word = (uint32_t*) tx_desc;
 
-
+    uint32_t *p = (uint32_t *)emac;
+    uint32_t n = sizeof(*emac) / sizeof(uint32_t);
+    uint32_t pa;
 
     //printf("DBG: pointer checked,introduce some delay to avoid hang!\r\n"); //adding this printf between tx_desc and if(tx_desc->status) can resolve hang issue.
     printf("DBG: pointer checked! check addresses \r\n");
@@ -1323,8 +1398,10 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     for (i = 0; i < 32; i++) {
         printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
     }
-
-
+    uint8_t* dma_buf = emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
+    size_t alen = (len + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
+    alt_cache_l2_clean((void*)dma_buf, alen);
+    
 
 
 
@@ -1416,6 +1493,11 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
             
             /* Resume DMA transmission */
             alt_eth_dma_resume_dma_tx(emac->instance);
+        }
+        
+        for (i = 90; i < n; i++) {
+            pa = (uint32_t)p;
+            printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
         }
 
         alt_eth_start(emac->instance);

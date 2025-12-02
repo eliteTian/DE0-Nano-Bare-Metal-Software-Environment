@@ -1,0 +1,24 @@
+To do:
+
+Figure out why gmac_debug register is all 0s. Are packets every transmitted at all?a Answer: linux checked, all 0 as well after TX
+
+
+tx_desc content: DBG[0]: 0x70d00000
+tx_desc content: DBG[1]: 0x00000050
+tx_desc content: DBG[2]: 0x0011d17c
+tx_desc content: DBG[3]: 0x0011d28c
+
+
+dbg this descriptor setting
+
+1.Need to do a full reg dump of DMAGMAC registers and compare.
+2.Need to do a full dump of Struct.
+
+Can pretty sure the problem is in sampling. because register shown successful frame transmission.
+Need to figure out how wireshark captures.
+
+check GMAC speed. PS FES TC bits. can check Linux 
+
+if I fprint 109, wireshark is able to detect, 0-108
+if I fprint 108, wireshark is not able to detect 0-107
+
