@@ -148,6 +148,7 @@ extern "C"
 #define PHY_MMD_DEV_ADDR_07             (7)   
     
 /* PHY_basic_Control_register           */ 
+#define PHY_SPDSEL6                     (1 << 6 )
 #define PHY_COLLTEST                    (1 << 7 )    /* Collision test enable                          */
 #define PHY_DUPLEX_MODE                 (1 << 8 )    /* Set Duplex Mode                                */
 #define PHY_RESTART_AUTONEGOTIATION     (1 << 9 )    /* Restart Auto-Negotiation of Link abilities     */
@@ -163,6 +164,9 @@ extern "C"
 #define PHY_JABBER_DETECTION            (0x0002)     /*!< Jabber condition detected */
 #define PHY_AUTOCAP                     (0x0008)     /*!< Auto Negotiation Capability */
 
+/* PHY 1GCTL register bits*/
+#define PHY_1GCTL_ENABLE_MAN            (1 << 12)      /* Enable master-slave manual configuration    */
+#define PHY_1GCTL_MAN_SLAVE             (1 << 11)     /*1 = Configure PHY as master during master-slave negotiation0 = Configure PHY as slave during master-slave negotiation */
 /******************************************************************************/
 /*!
  * Write a PHY register

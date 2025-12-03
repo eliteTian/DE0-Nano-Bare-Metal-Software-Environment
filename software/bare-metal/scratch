@@ -22,3 +22,5 @@ check GMAC speed. PS FES TC bits. can check Linux
 if I fprint 109, wireshark is able to detect, 0-108
 if I fprint 108, wireshark is not able to detect 0-107
 
+cache coherency issue. Need to figure out cache
+

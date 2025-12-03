@@ -391,6 +391,10 @@ ALT_STATUS_CODE alt_eth_phy_loopback(uint32_t new_state, uint32_t emac_instance)
     {
         /* Enable the PHY loopback mode */
         tmpreg |= PHY_LOOPBACK;  
+        tmpreg |= PHY_SPDSEL6;
+        tmpreg &= ~PHY_SPEEDSEL;
+        tmpreg &= ~PHY_AUTONEGOTIATION;
+        tmpreg |=    PHY_DUPLEX_MODE;
     }
     else
     {
@@ -400,7 +404,85 @@ ALT_STATUS_CODE alt_eth_phy_loopback(uint32_t new_state, uint32_t emac_instance)
     
     /* Update the PHY control register with the new configuration */
     rc = alt_eth_phy_write_register(emac_instance, PHY_BCR, tmpreg);
-   
+
+    if (alt_eth_phy_read_register(emac_instance, PHY_1GCTL, &tmpreg) == ALT_E_ERROR)
+    { 
+        return ALT_E_ERROR; 
+    }  
+
+    tmpreg &= (~PHY_1GCTL_MAN_SLAVE);
+    tmpreg |= PHY_1GCTL_ENABLE_MAN;
+    rc = alt_eth_phy_write_register(emac_instance, PHY_1GCTL, tmpreg);
+  
     return rc;
+} 
+
+
+ALT_STATUS_CODE alt_eth_phy_1g_config(uint32_t emac_instance)
+{
+    uint32_t rdval,timeout;
+    ALT_STATUS_CODE rc;
+      
+    /*--------------------   Configure the PHY skew values  ----------------*/
+    rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_CONTROL_PAD_SKEW_REG, PHY_CONTROL_PAD_SKEW_VALUE);
+    if (rc==ALT_E_ERROR) { return rc; }
+       
+    rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_CLK_PAD_SKEW_REG,     PHY_CLK_PAD_SKEW_VALUE);
+    if (rc==ALT_E_ERROR) { return rc; }
+    
+    rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_RX_DATA_PAD_SKEW_REG, PHY_RX_DATA_PAD_SKEW_VALUE);
+    if (rc==ALT_E_ERROR) { return rc; }
+    
+    rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_TX_DATA_PAD_SKEW_REG, PHY_TX_DATA_PAD_SKEW_VALUE);
+    if (rc==ALT_E_ERROR) { return rc; }
+    
+    /*Configure AN FLP Burst Trasmit timing interval*/
+    rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_LO_REG, PHY_MMD_D0_FLP_16MS_LO);
+    if (rc==ALT_E_ERROR) { return rc; }
+    
+    rc = alt_eth_phy_write_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_HI_REG, PHY_MMD_D0_FLP_16MS_HI);
+    if (rc==ALT_E_ERROR) { return rc; }
+
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_HI_REG,&rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_MMD_D0_FLP_HI_REG,rdval);  
+#ifdef ALT_DEBUG_ETHERNET
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_CONTROL_PAD_SKEW_REG, &rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_CONTROL_PAD_SKEW_REG,rdval);
+    
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_CLK_PAD_SKEW_REG, &rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_CLK_PAD_SKEW_REG,rdval);
+      
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_RX_DATA_PAD_SKEW_REG, &rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_RX_DATA_PAD_SKEW_REG,rdval);
+    
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_02, PHY_TX_DATA_PAD_SKEW_REG,&rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_TX_DATA_PAD_SKEW_REG,rdval);;
+
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_LO_REG,&rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_MMD_D0_FLP_LO_REG,rdval);
+    
+    alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_HI_REG,&rdval);
+    dprintf("skew reg 0x%x 0x%x\n",PHY_MMD_D0_FLP_HI_REG,rdval);   
+#endif  /* ALT_DEBUG_ETHERNET */
+       
+    timeout = 0;
+    do
+    {
+        timeout++;
+        rc=alt_eth_phy_read_register(emac_instance, PHY_BSR, &rdval);
+    } while (!(rdval & PHY_LINKED_STATUS) && (timeout < PHY_READ_TO) && (rc==ALT_E_SUCCESS));
+   
+    /* Return ERROR in case of timeout */
+    if ((timeout == PHY_READ_TO) || (rc==ALT_E_ERROR))
+    {
+        dprintf("Error Link Down\n");
+        return ALT_E_ERROR;
+    }
+    
+    printf("Link is up!\n");
+ 
+     
+     
+    return ALT_E_SUCCESS;
 } 
 

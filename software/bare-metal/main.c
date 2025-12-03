@@ -45,7 +45,7 @@ extern void sinTest(uint8_t* dsp_arr);
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 #ifdef ETH_TEST
-static alt_eth_emac_instance_t emac1;
+static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32)));
 int eth_main(alt_eth_emac_instance_t* emac);
 #endif
 
@@ -78,11 +78,11 @@ int main(void) {
         ALT_PRINTF("SUCCESS: UART_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
     }
 
-    status = alt_cache_l2_init();
+    status = alt_cache_system_enable();
     if (status != ALT_E_SUCCESS) {
-        ALT_PRINTF("ERROR: CACHE_INIT failed, %" PRIi32 ".\n", status);
+        ALT_PRINTF("ERROR: CACHE_ENABLE failed, %" PRIi32 ".\n", status);
     } else {
-        ALT_PRINTF("SUCCESS: CACHE_INIT SUCCESSFUL, %" PRIi32 ".\n", status);
+        ALT_PRINTF("SUCCESS: CACHE_ENABLE SUCCESSFUL, %" PRIi32 ".\n", status);
     }
 
 
@@ -256,7 +256,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
         mysleep(5000*1000);
 
 
-        for (j = 0; j < 4; j++) { //should be 32
+        for (j = 0; j < 32; j++) { //should be 32
             printf("tx_buf content: DBG[%d]: 0x%08x\r\n", j, tx_buf_p[j]);
         }
         //mysleep(50000*1000);
