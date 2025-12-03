@@ -36,7 +36,10 @@
 //#define ALT_RSTMGR_ADDR (0xFFD05000)
 #define ALT_RSTMGR_PERMODRST_OFST (0x14)
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
-#define ETH_TEST
+//tests to perform
+//#define ETH_TEST
+#define DMA_TEST
+
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
@@ -47,6 +50,9 @@ void dbgReg(uint32_t addr);
 #ifdef ETH_TEST
 static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32)));
 int eth_main(alt_eth_emac_instance_t* emac);
+#endif
+#ifdef DMA_TEST
+extern int dma_main(void);
 #endif
 
 static uint8_t dsp_arr[4096];
@@ -86,26 +92,27 @@ int main(void) {
     }
 
 
-    //dbgReg(0xFFD08568);
-	//mysleep(2000*1000);
 
     //enable watchdog to do a warm reset upon timeout
     watchDogInit();
+    
     //clkMgrTest();
     //fpgaCustomTest();      
     //rstMgrTest();
     //fpgaTest();
     //ledTest();
 
-    //curr_val = alt_read_word(0xFFD05000);
-    //ALT_PRINTF("SUCCESS: RST STATUS REGISTER is %" PRIi32 ".\n", curr_val);
      
     //ethernet module test, including init
 #ifdef ETH_TEST
     eth_main(&emac1);
     ethDbg();
 #endif
-
+    
+#ifdef DMA_TEST
+    dma_main();
+#endif
+    
     if (status == ALT_E_SUCCESS)
     {
         status = socfpga_int_start();

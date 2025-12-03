@@ -1422,9 +1422,9 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     for (i = 0; i < 32; i++) {
         printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
     }
-    //void* dma_buf = emac;// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
-    //size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
-    //alt_cache_l2_clean(dma_buf, alen);
+    void* dma_buf = emac;// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
+    size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
+    alt_cache_system_clean(dma_buf, alen);
     
 
 
