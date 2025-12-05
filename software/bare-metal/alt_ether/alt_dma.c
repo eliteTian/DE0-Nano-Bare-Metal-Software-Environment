@@ -696,14 +696,14 @@ ALT_STATUS_CODE alt_dma_channel_exec(ALT_DMA_CHANNEL_t channel, ALT_DMA_PROGRAM_
     }
 
     /* Sync the DMA program to RAM. */
-
+     // dbg, what happens if I don't flush cache 
     if (status == ALT_E_SUCCESS)
     {
         void * vaddr  = (void *)((uintptr_t)(pgm->program + pgm->buffer_start) & ~(ALT_CACHE_LINE_SIZE - 1));
         void * vend   = (void *)(((uintptr_t)(pgm->program + pgm->buffer_start + pgm->code_size) + (ALT_CACHE_LINE_SIZE - 1)) & ~(ALT_CACHE_LINE_SIZE - 1));
         size_t length = (uintptr_t)vend - (uintptr_t)vaddr;
 
-        status = alt_cache_system_clean(vaddr, length);
+      status = alt_cache_system_clean(vaddr, length);  
     }
 
     /*

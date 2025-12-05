@@ -37,8 +37,8 @@
 #define ALT_RSTMGR_PERMODRST_OFST (0x14)
 #define ALT_GPIO_BITMASK                0x1FFFFFFF
 //tests to perform
-//#define ETH_TEST
-#define DMA_TEST
+#define ETH_TEST
+//#define DMA_TEST
 
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
@@ -223,21 +223,51 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     //printf( "SUCCESS: system manager emac group's L3MST register is 0x %x\r\n",(unsigned int)stat );
 
 
-    uint8_t test_frame[80] = {
-        //ASUSTekCOMPU_: //6bytes
-        0x24,0x4b,0xfe,0xe0,0xef,0x05,
-      //   0xff,0xff,0xff,0xff,0xff,0xff,
+    //uint8_t test_frame[96] = {
+    //    /* DESTINATION: ASUSTekCOMPU_: //6bytes*/    //  0x24,0x4b,0xfe,0xe0,0xef,0x05,
+    //     0xff,0xff,0xff,0xff,0xff,0xff,
+    //    //Altera_: //6bytes
+    //     0x00,0x07,0xed,0x42,0x9a,0x48,
+    //    // EtherType = 0x0800 (IPv4)
+    //    0x08,0x00, //2 bytes
+    //    // Payload: 68 bytes filler
+    //    'T','e','s','t',' ','f','r','a','m','e',' ','f','r','o','m',' ',
+    //    'D','E','-','N','a','n','o',' ','E','M','A','C','!',' ','1','2',
+    //    '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!',
+    //    'D','E','-','N','a','n','o',' ','E','M','A','C','!',' ','1','2',
+    //    '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!'
+    //    
+    //};
+    //
+    uint8_t test_frame[64] = {
+        /* DESTINATION: ASUSTekCOMPU_: //6bytes*/    //  0x24,0x4b,0xfe,0xe0,0xef,0x05, 0xff,0xff,0xff,0xff,0xff,0xff,
+        // 0x24,0x4b,0xfe,0xe0,0xef,0x05,
+         0xff,0xff,0xff,0xff,0xff,0xff,
         //Altera_: //6bytes
          0x00,0x07,0xed,0x42,0x9a,0x48,
         // EtherType = 0x0800 (IPv4)
         0x08,0x00, //2 bytes
-        // Payload: 68 bytes filler
-        'T','e','s','t',' ','f','r','a','m','e',' ','f','r','o','m',' ',
-        'D','E','-','N','a','n','o',' ','E','M','A','C','!',' ','1','2',
-        '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!'
-        
+        0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,    
+        0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,  
+        0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,  
+        //0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,  
+        //0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,
+        0x15,0x15
     };
 
+    //uint8_t test_frame[64] = {
+    //    //ASUSTekCOMPU_:
+    //    0x24,0x4b,0xfe,0xe0,0xef,0x05,
+    //    //Altera_:
+    //    0x00,0x07,0xed,0x42,0x9a,0x48,
+    //    // EtherType = 0x0800 (IPv4)
+    //    0x08,0x00,
+    //    // Payload: 46 bytes filler
+    //    'T','e','s','t',' ','f','r','a','m','e',' ','f','r','o','m',' ',
+    //    'D','E','-','N','a','n','o',' ','E','M','A','C','!',' ','1','2',
+    //    '3','4','5','6','7','8','9','0','!','!','!','!','!','!','!','!'
+    //};
+    
     emac->instance = 1;
     //alt_eth_emac_hps_init(emac->instance);
     //alt_eth_emac_dma_init(emac->instance);
@@ -249,17 +279,9 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     //send packet
     printf( "Hufei: get ready to send packet\r\n" );
     for( i=0;i<1;i++) {
-        //mysleep(5000*1000);
-        //for (j = 0; j < 32; j++) {
-        //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", j, tx_buf_p[j]);
-        //}
-        //
-        //for (i = 0; i < 4; i++) {
-        //    printf("tx_desc content: DBG[%d]: 0x%08x\r\n", i, tx_desc_word[i]);
-        //}
 
         mysleep(1000*1000);
-        alt_eth_send_packet(test_frame, 64, 1, 1, emac);
+        alt_eth_send_packet(test_frame, sizeof(test_frame), 1, 1, emac);
         mysleep(5000*1000);
 
 

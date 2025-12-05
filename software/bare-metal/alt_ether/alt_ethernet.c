@@ -66,9 +66,19 @@ void alt_dbg_reg(const char *name, void *addr) {
     uint32_t val = alt_read_word(addr);
     printf("Addr @ %s (0x%p) value = 0x%08x\r\n", name, addr, (unsigned int)val);
 }
-static volatile uint8_t dumm_arr[786463];
+//static volatile uint8_t dumm_arr[786463];
 
+void dump_ddr(void *addr, size_t len)
+{
+    uint32_t *p = (uint32_t *)addr;
+    uint32_t *pa;
+    uint32_t i;
+    for (i = 0; i < len; i++) {
+            pa = p;
+            printf("DUMP RAW DDR[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+    }
 
+}
 
 //#define ALT_EMAC1_DMAGRP_ADDR        ALT_CAST(void *, (ALT_CAST(char *, ALT_EMAC1_ADDR) + ALT_EMAC1_DMAGRP_OFST))
  
@@ -484,6 +494,8 @@ void alt_eth_setup_txdesc(alt_eth_emac_instance_t * emac)
   
     /* Set TX Descriptor List Address Register */
     alt_eth_dma_set_tx_desc_addr((uint32_t) &emac->tx_desc_ring[0], emac->instance);
+    //alt_eth_dma_set_tx_desc_addr(((uint32_t) &emac->tx_desc_ring[0] + 4), emac->instance); //dbg purpose, sabotage
+
   
 }
 
@@ -593,15 +605,15 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     //status = alt_eth_phy_config(emac->instance);
     //if (status != ALT_E_SUCCESS) { return status; }    
 
-    status = alt_eth_phy_1g_config(emac->instance);
-    if (status != ALT_E_SUCCESS) { return status; }    
-
-    printf( "Hufei: PHY config done\r\n" );
-
-    //status = alt_eth_phy_loopback(1,emac->instance);
+    //status = alt_eth_phy_1g_config(emac->instance);
     //if (status != ALT_E_SUCCESS) { return status; }    
 
-    //printf( "Hufei: PHY loopback done\r\n" );
+    //printf( "Hufei: PHY config done\r\n" );
+
+    status = alt_eth_phy_loopback(1,emac->instance);
+    if (status != ALT_E_SUCCESS) { return status; }    
+
+    printf( "Hufei: PHY loopback done\r\n" );
 
       
     /* Reset the Ethernet */
@@ -827,18 +839,39 @@ void dumpRegs(){
     addr = 0xFF70203C; 
     stat = alt_read_word( addr);
     printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
-
+// more info.
     addr = 0xFF7020D8; 
     stat = alt_read_word( addr);
-    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    printf("DBG: SGMII_RGMII_SMII_Control Status is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
+
+    addr = 0xFF702114; 
+    stat = alt_read_word( addr);
+    printf("DBG: Number of bytes transmitted in good and bad frames is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
+
+    addr = 0xFF702118; 
+    stat = alt_read_word( addr);
+    printf("DBG: Number of good and bad Frames transmitted  is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
+
+    addr = 0xFF70211C; 
+    stat = alt_read_word( addr);
+    printf("DBG: Number of broadcast frames transmitted  is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
+ 
+    addr = 0xFF702124; 
+    stat = alt_read_word( addr);
+    printf("DBG: Number of good and bad frames transmitted with length 64 bytes is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
+
+    addr = 0xFF702128; 
+    stat = alt_read_word( addr);
+    printf("DBG: Number of good and bad frames transmitted with length 64-127 bytes is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
+    
 
     addr = 0xFF702164; 
     stat = alt_read_word( addr);
-    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    printf("DBG: Number of bytes transmitted, exclusive of preamble, in good frames only is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
 
     addr = 0xFF702168; 
     stat = alt_read_word( addr);
-    printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+    printf("DBG: Number of good frames transmitted is 0x%08x,0x%08x !\t\t\t\t\t\n",addr,stat);
 
     addr = 0xFF702180; 
     stat = alt_read_word( addr);
@@ -1376,6 +1409,8 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     
     alt_eth_dma_desc_t *tx_desc;
     printf("DBG: emac addr=%p\n",emac);
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    
     uint32_t * txbuf;
     int32_t index=0;
     unsigned int i;
@@ -1389,7 +1424,6 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     uint32_t *p = (uint32_t *)emac;
     uint32_t n = sizeof(*emac) / sizeof(uint32_t);
     uint32_t pa;
-    volatile uint8_t* dp = dumm_arr;
 
 
     //printf("DBG: pointer checked,introduce some delay to avoid hang!\r\n"); //adding this printf between tx_desc and if(tx_desc->status) can resolve hang issue.
@@ -1422,10 +1456,14 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     for (i = 0; i < 32; i++) {
         printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
     }
-    void* dma_buf = emac;// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
-    size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
-    alt_cache_system_clean(dma_buf, alen);
-    
+
+
+   
+       // void * vaddr  = (void *)((uintptr_t)(pgm->program + pgm->buffer_start) & ~(ALT_CACHE_LINE_SIZE - 1));
+       // void * vend   = (void *)(((uintptr_t)(pgm->program + pgm->buffer_start + pgm->code_size) + (ALT_CACHE_LINE_SIZE - 1)) & ~(ALT_CACHE_LINE_SIZE - 1));
+       // size_t length = (uintptr_t)vend - (uintptr_t)vaddr;
+
+      //status = alt_cache_system_clean(vaddr, length);
 
 
 
@@ -1524,11 +1562,23 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
             printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
         }
 
-        for (i=0; i < 786463; i++) {
-            *dp++ = i;
-        }
+        void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
+        size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
 
+
+        //dump_ddr(dma_buf,alen);
+
+        status = alt_cache_system_clean(dma_buf, alen);
+
+        //dump_ddr(dma_buf,alen);
+
+
+        if (status != ALT_E_SUCCESS) {
+            ALT_PRINTF("ERROR: CACHE SYNC failed, %" PRIi32 ".\n", status);
+        } 
+        
         alt_eth_start(emac->instance);
+        
         p = (uint32_t *)emac;
         for (i = 0; i < n; i++) {
             pa = (uint32_t)p;
@@ -1670,3 +1720,6 @@ void alt_eth_mac_check_mii_link_status(uint32_t instance)
         }
     }
 }
+
+
+
