@@ -17,4 +17,5 @@ hardware/incremental_db/
 *.qws
 *.log
 screenlog.0
+*.reg
 

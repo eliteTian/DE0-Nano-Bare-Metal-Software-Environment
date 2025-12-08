@@ -992,7 +992,7 @@ void alt_eth_dma_resume_dma_rx(uint32_t instance);
 ALT_STATUS_CODE alt_eth_phy_config(uint32_t instance);
 ALT_STATUS_CODE alt_eth_phy_loopback(uint32_t new_state, uint32_t instance);
 ALT_STATUS_CODE alt_eth_phy_1g_config(uint32_t instance);
-
+ALT_STATUS_CODE alt_eth_phy_dump_all(uint32_t instance);
 /******************************************************************************/
 /*!
  * Reset the phy

@@ -237,22 +237,8 @@ int main(int argc, char** argv)
     ALT_16550_HANDLE_t handle; //configuration data
     char uart_name[64];
 
-    if (status == ALT_E_SUCCESS)
-    {
-        ALT_PRINTF("INFO: Starting Launch Prompt ...\n");
-       // status = launcher_prompt(&buffer);
-    }
 
-    ALT_PRINTF("Hufei: buffer content printout\n");
     
-    uint32_t size = sizeof(buffer);
-    uint8_t* start =(uint8_t*) &buffer;
-    
-    for( int j = 0; j < size; j++) {
-        
-        ALT_PRINTF("Raw bytes are, %" PRIu8 ".\n", *start++);
-      
-    }
 
     handle.device     = ALT_16550_DEVICE_SOCFPGA_UART0;
     handle.location   = 0;
@@ -295,7 +281,21 @@ int main(int argc, char** argv)
     // Start the console app
     */
 
+    uint32_t size = sizeof(buffer);
+    uint8_t* start =(uint8_t*) &buffer;
+    
+    for( int j = 0; j < size; j++) {
+        
+        ALT_PRINTF("Raw bytes are, %" PRIu8 ".\n", *start++);
+      
+    }
 
+
+    if (status == ALT_E_SUCCESS)
+    {
+        printf("INFO: Starting Launch Prompt ...\n");
+        status = launcher_prompt(&buffer);
+    }
 
 
 

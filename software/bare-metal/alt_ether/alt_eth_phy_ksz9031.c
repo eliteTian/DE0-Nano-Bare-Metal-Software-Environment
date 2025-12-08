@@ -122,10 +122,17 @@ ALT_STATUS_CODE alt_eth_phy_config(uint32_t emac_instance)
     alt_eth_phy_read_register_extended(emac_instance, PHY_MMD_DEV_ADDR_00, PHY_MMD_D0_FLP_HI_REG,&rdval);
     dprintf("skew reg 0x%x 0x%x\n",PHY_MMD_D0_FLP_HI_REG,rdval);   
 #endif  /* ALT_DEBUG_ETHERNET */
+    /* Check PHY is power-down mode */
+    rc = alt_eth_phy_read_register(emac_instance, PHY_BCR, &rdval);
        
+    if (rdval & PHY_POWERDOWN) {
+      printf("Link is power-down!\n");
+      return ALT_E_ERROR;
+    }
+        
     /* Check PHY Status if auto-negotiation is supported */
     rc = alt_eth_phy_read_register(emac_instance, PHY_BSR, &rdval);
-    if (((rdval & PHY_AUTOCAP) == 0) || (rc==ALT_E_ERROR))
+    if (((rdval & PHY_AUTOCAP) == 0) || (rc==ALT_E_ERROR) )
     {
       return ALT_E_ERROR;
     }
@@ -376,6 +383,36 @@ ALT_STATUS_CODE alt_eth_phy_read_register_extended(uint32_t emac_instance, uint3
 }
 
 
+
+ALT_STATUS_CODE alt_eth_phy_dump_register_extended(uint32_t emac_instance, uint32_t dev_addr, uint32_t phy_reg, uint32_t * rdval)
+{
+    ALT_STATUS_CODE rc;
+    
+    rc=alt_eth_phy_write_register(emac_instance,
+                         PHY_MMD_CTRL_REG, 
+                         dev_addr);
+    if (rc == ALT_E_ERROR) { return ALT_E_ERROR; }
+   
+    rc=alt_eth_phy_write_register(emac_instance,
+                         PHY_MMD_REGDATA_REG, 
+                         phy_reg);
+    if (rc == ALT_E_ERROR)  { return ALT_E_ERROR; }    
+    
+    rc=alt_eth_phy_write_register(emac_instance,
+                         PHY_MMD_CTRL_REG, 
+                         (PHY_MOD_DATA_NO_POST_INC << 14) | dev_addr);
+    if (rc == ALT_E_ERROR)  { return ALT_E_ERROR; }                     
+
+           
+    rc = alt_eth_phy_read_register(emac_instance,
+                               PHY_MMD_REGDATA_REG,rdval);
+    printf("DUMP MMD REG dev_addr=0x%x, mmd_reg_addr=0x%x, val=0x%x\n",dev_addr,phy_reg,*rdval);
+    return rc;
+}
+
+
+
+
 ALT_STATUS_CODE alt_eth_phy_loopback(uint32_t new_state, uint32_t emac_instance)
 {
     uint32_t tmpreg = 0;
@@ -486,3 +523,131 @@ ALT_STATUS_CODE alt_eth_phy_1g_config(uint32_t emac_instance)
     return ALT_E_SUCCESS;
 } 
 
+ALT_STATUS_CODE alt_eth_phy_dump_register(uint32_t emac_instance, uint32_t phy_reg, uint32_t * rdval)
+{
+    uint32_t tmpreg = 0;     
+    volatile uint32_t timeout = 0;
+    uint32_t phy_addr;
+     
+    if (emac_instance > 2) { return  ALT_E_ERROR; }
+    
+    phy_addr=Phy_Addr[emac_instance];
+    
+    /* Prepare the MII address register value */
+    tmpreg = 0;
+    /* Set the PHY device address */
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_PA_SET(phy_addr);
+    /* Set the PHY register address */
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GR_SET(phy_reg);
+    /* Set the read mode */
+    tmpreg &= ALT_EMAC_GMAC_GMII_ADDR_GW_CLR_MSK;
+    /* Set the clock divider */
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_CR_SET(ALT_EMAC_GMAC_GMII_ADDR_CR_E_DIV102);
+    /* Set the MII Busy bit */
+    tmpreg |= ALT_EMAC_GMAC_GMII_ADDR_GB_SET(ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK);
+    /* Write the result value into the MII Address register */
+    alt_write_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]), tmpreg & 0xffff);
+    
+    /* Check the Busy flag */
+    do
+    {
+        timeout++;
+        tmpreg = alt_read_word(ALT_EMAC_GMAC_GMII_ADDR_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]));
+    } while ((tmpreg & ALT_EMAC_GMAC_GMII_ADDR_GB_SET_MSK) && (timeout < PHY_READ_TO));
+    
+    /* Return ERROR in case of timeout */
+    if (timeout == PHY_READ_TO)
+    {
+        return ALT_E_ERROR;
+    }
+    
+    /* Return data register value */
+    *rdval = alt_read_word(ALT_EMAC_GMAC_GMII_DATA_ADDR(Alt_Emac_Gmac_Grp_Addr[emac_instance]));
+
+    printf("DUMP STD REG std_reg_addr=0x%x, val=0x%x\n",phy_reg,*rdval);
+
+    
+    return ALT_E_SUCCESS;
+}
+
+
+
+
+ALT_STATUS_CODE alt_eth_phy_dump_all(uint32_t emac_instance) {
+    //STD registers:
+    ALT_STATUS_CODE rc;
+    rc = ALT_E_SUCCESS;
+    uint32_t rdval;
+    alt_eth_phy_dump_register(emac_instance,0x0 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x1 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x2 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x3 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x4 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x5 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x6 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x7 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x8 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x9 ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0xa ,&rdval);    
+    alt_eth_phy_dump_register(emac_instance,0xd ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0xe ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0xf ,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x11,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x12,&rdval);      
+    alt_eth_phy_dump_register(emac_instance,0x13,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x15,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x1b,&rdval);      
+    alt_eth_phy_dump_register(emac_instance,0x1c,&rdval);
+    alt_eth_phy_dump_register(emac_instance,0x1f,&rdval);      
+    //MMD registers:
+    alt_eth_phy_dump_register_extended(emac_instance, 1, 0x5a, &rdval); 
+
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x00, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x01, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x02, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x03, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x04, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x05, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x06, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x08, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x10, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x11, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x12, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x13, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x14, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x15, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x16, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x17, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x18, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x19, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x1a, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x1b, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x1c, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x1d, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x1e, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x1f, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x20, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x21, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x22, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x23, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x24, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x25, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x26, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x27, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x28, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x29, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x2a, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 2, 0x2b, &rdval);
+
+    alt_eth_phy_dump_register_extended(emac_instance, 3, 0x00, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 3, 0x01, &rdval);
+
+    alt_eth_phy_dump_register_extended(emac_instance, 7, 0x3c, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 7, 0x3d, &rdval);
+    
+    alt_eth_phy_dump_register_extended(emac_instance, 0x1c, 0x04, &rdval);
+    alt_eth_phy_dump_register_extended(emac_instance, 0x1c, 0x23, &rdval);
+
+
+    return rc;
+}    

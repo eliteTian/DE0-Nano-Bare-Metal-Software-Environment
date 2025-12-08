@@ -61,7 +61,7 @@ extern "C"
 
 /* Micrel KSZ9031 Extended registers */           
 #define PHY_CONTROL_PAD_SKEW_REG        (4)
-#define PHY_CONTROL_PAD_SKEW_VALUE      (0x0700)
+#define PHY_CONTROL_PAD_SKEW_VALUE      (0x70)
 #define PHY_RX_DATA_PAD_SKEW_REG        (5)
 #define PHY_RX_DATA_PAD_SKEW_VALUE      (0x7777)
 #define PHY_TX_DATA_PAD_SKEW_REG        (6)
@@ -200,6 +200,7 @@ ALT_STATUS_CODE alt_eth_phy_write_register(uint32_t emac_instance, uint32_t phy_
  * \retval      ALT_E_ERROR     The operation failed.
  */
 ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_reg, uint32_t * rdval);
+ALT_STATUS_CODE alt_eth_phy_dump_register(uint32_t emac_instance, uint32_t phy_reg, uint32_t * rdval);
 
 /******************************************************************************/
 /*!
@@ -219,6 +220,7 @@ ALT_STATUS_CODE alt_eth_phy_read_register(uint32_t emac_instance, uint32_t phy_r
  * \retval      ALT_E_ERROR     The operation failed.
  */
 ALT_STATUS_CODE alt_eth_phy_read_register_extended(uint32_t emac_instance,  uint32_t dev_addr, uint32_t phy_reg, uint32_t * rdval);
+ALT_STATUS_CODE alt_eth_phy_dump_register_extended(uint32_t emac_instance,  uint32_t dev_addr, uint32_t phy_reg, uint32_t * rdval);
 
 /******************************************************************************/
 /*!

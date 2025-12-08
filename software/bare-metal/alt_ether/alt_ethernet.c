@@ -61,6 +61,7 @@
 //    printf("Addr @ 0x%08x value is 0x%08x.\r\n", (unsigned int)(addr), (unsigned int)(val));
 //}
 
+static uint8_t MAC_ADDR[6] = { 0x82,0xa3,0xf5,0x17,0x9e,0xc1};
 
 void alt_dbg_reg(const char *name, void *addr) {
     uint32_t val = alt_read_word(addr);
@@ -597,25 +598,29 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     }
 
 
+    alt_eth_phy_dump_all(emac->instance);
+    printf( "Hufei: Before PHY config PHY regs dump done\r\n" );  
+
 
 
     
     
     /* Configure the PHY */
-    //status = alt_eth_phy_config(emac->instance);
-    //if (status != ALT_E_SUCCESS) { return status; }    
+    status = alt_eth_phy_config(emac->instance);
+    if (status != ALT_E_SUCCESS) { return status; }    
 
     //status = alt_eth_phy_1g_config(emac->instance);
     //if (status != ALT_E_SUCCESS) { return status; }    
 
     //printf( "Hufei: PHY config done\r\n" );
 
-    status = alt_eth_phy_loopback(1,emac->instance);
-    if (status != ALT_E_SUCCESS) { return status; }    
+    //status = alt_eth_phy_loopback(1,emac->instance);
+    //if (status != ALT_E_SUCCESS) { return status; }    
 
-    printf( "Hufei: PHY loopback done\r\n" );
-
-      
+    //printf( "Hufei: PHY loopback done\r\n" );
+    //
+    alt_eth_phy_dump_all(emac->instance);
+    printf( "Hufei: After PHY config PHY regs dump done\r\n" );  
     /* Reset the Ethernet */
     status = alt_eth_software_reset(emac->instance);
     if (status != ALT_E_SUCCESS) { 
@@ -717,6 +722,9 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
         alt_mac_config_reg_settings &= ALT_EMAC_GMAC_MAC_CFG_PS_CLR_MSK;     
         dprintf("Auto Negotiation speed = 1000\n"); 
     } 
+
+    //set mac addr
+    alt_eth_mac_set_mac_addr(MAC_ADDR,emac->instance);
     
     /* Read the MII Status Register to clear the changed flag */
     alt_eth_mac_get_mii_link_state(emac->instance);
@@ -839,6 +847,15 @@ void dumpRegs(){
     addr = 0xFF70203C; 
     stat = alt_read_word( addr);
     printf("DBG: DBG_REG is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702040; 
+    stat = alt_read_word( addr);
+    printf("DBG: MAC_ADDR0_high is 0x%08x,0x%08x !\n",addr,stat);
+
+    addr = 0xFF702044; 
+    stat = alt_read_word( addr);
+    printf("DBG: MAC_ADDR0_low is 0x%08x,0x%08x !\n",addr,stat);
+
 // more info.
     addr = 0xFF7020D8; 
     stat = alt_read_word( addr);
@@ -1411,7 +1428,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     printf("DBG: emac addr=%p\n",emac);
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
     
-    uint32_t * txbuf;
+    //uint32_t * txbuf;
     int32_t index=0;
     unsigned int i;
     int32_t paranoid=NUMBER_OF_TX_DESCRIPTORS+1;
@@ -1452,10 +1469,10 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     alt_eth_delay(128);
     //printf("DBG: Data copied over!\r\n");
 
-    txbuf = (uint32_t*)&emac->tx_buf;
-    for (i = 0; i < 32; i++) {
-        printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
-    }
+    //txbuf = (uint32_t*)&emac->tx_buf;
+    //for (i = 0; i < 32; i++) {
+    //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", i, txbuf[i]);
+    //}
 
 
    
@@ -1557,20 +1574,20 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
             alt_eth_dma_resume_dma_tx(emac->instance);
         }
         
-        for (i = 0; i < n; i++) {
-            pa = (uint32_t)p;
-            printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
-        }
+        //for (i = 0; i < n; i++) {
+        //    pa = (uint32_t)p;
+        //    printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+        //}
 
         void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
         size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
 
 
-        //dump_ddr(dma_buf,alen);
+        ////dump_ddr(dma_buf,alen);
 
         status = alt_cache_system_clean(dma_buf, alen);
 
-        //dump_ddr(dma_buf,alen);
+        ////dump_ddr(dma_buf,alen);
 
 
         if (status != ALT_E_SUCCESS) {
@@ -1580,7 +1597,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
         alt_eth_start(emac->instance);
         
         p = (uint32_t *)emac;
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n/n; i++) {
             pa = (uint32_t)p;
             printf("POST_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
         }        
