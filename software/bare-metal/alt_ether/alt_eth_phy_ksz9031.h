@@ -62,6 +62,8 @@ extern "C"
 /* Micrel KSZ9031 Extended registers */           
 #define PHY_CONTROL_PAD_SKEW_REG        (4)
 #define PHY_CONTROL_PAD_SKEW_VALUE      (0x70)
+//previous bug:#define PHY_CONTROL_PAD_SKEW_VALUE      (0x700)
+    
 #define PHY_RX_DATA_PAD_SKEW_REG        (5)
 #define PHY_RX_DATA_PAD_SKEW_VALUE      (0x7777)
 #define PHY_TX_DATA_PAD_SKEW_REG        (6)
