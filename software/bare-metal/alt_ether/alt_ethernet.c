@@ -249,10 +249,10 @@ void emacHPSIFInit(uint32_t instance){
     } else {
         printf( "Hufei: PHY reset successful\r\n" );
     }
-    alt_eth_delay(1000000);
+
 
     //Note* PHY can't be configured when EMAC is in reset. 
-    status = alt_eth_phy_config(instance);
+    status = alt_eth_phy_1g_config(instance);
     if (status != ALT_E_SUCCESS) { 
         printf( "ERROR: Hufei: PHY config unsuccessful\r\n" );
         return ;
@@ -377,19 +377,16 @@ void emacInit(alt_eth_emac_instance_t * emac) {
     }
        
     /* Configure the MAC with the speed fixed by the auto-negotiation process */
-    if (phy_speed == 100)
-    {
+    if (phy_speed == 100) {
         /* Set Ethernet speed to 100M following the auto-negotiation */ 
         alt_mac_config_reg_settings |= ALT_EMAC_GMAC_MAC_CFG_FES_SET_MSK;  
         printf("Auto Negotiation speed = 100\n");       
-    } 
-    
-    if (phy_speed == 1000)
-    {
+    }  else if (phy_speed == 1000) {
         /* Set Ethernet speed to 1G following the auto-negotiation */ 
-        alt_mac_config_reg_settings |= ALT_EMAC_GMAC_MAC_CFG_PS_SET_MSK;     
-        printf("Auto Negotiation speed = 1000\n"); 
+        alt_mac_config_reg_settings &= ALT_EMAC_GMAC_MAC_CFG_PS_CLR_MSK;     
+        dprintf("Auto Negotiation speed = 1000\n"); 
     } 
+
     
     printf( "CRITICAL: GMAC config register to be written is 0x%08x,0x%08x,0x%08x  \r\n",alt_mac_config_reg_settings,phy_speed,phy_duplex_status );
     alt_write_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]), alt_mac_config_reg_settings);
@@ -398,35 +395,6 @@ void emacInit(alt_eth_emac_instance_t * emac) {
        
     /* Initialize the ethernet irq handler */   
     alt_eth_irq_init(emac, alt_eth_irq_callback);
-
-    //alt_eth_start(emac->instance);
-
-    //CRITICAL: GMAC config register to be written is 0x00e08c00,0x000003e8,0x00000001  
-    //GMAC_CONFIG status before eth_start:  0x00e08c00
-    //DMA_OPMODE status before eth_start:  0x00000000
-    //DMA_STATUS status before eth_start:  0x04000000
-    //DBG: Transmit descriptor addr to be read from dma is 0x0011d18c !
-    //DBG: the RX descriptor addr previously set to dma is 0x0011d1cc !
-    //CLKmanager: clock enable status are, we will enable emac1 bit  0x00000fff
-    //GMAC_CONFIG status after eth_start:  0x00e08c0c
-    //DMA_OPMODE status after eth_start:  0x00002002
-    //DMA_STATUS status after eth_start:  0x0011d18c 0x0000 0000 0001 0001 1101 0001 1000 1100
-    //DBG: Transmit descriptor addr to be read from dma after eth_start is 0x0011d18c !
-    //DBG: the RX descriptor addr previously set to dma after eth_start is 0x0011d1cc !
-    //
-    //
-    //GMAC_CONFIG status before eth_start:  0x00e0cc0c
-    //DMA_OPMODE status before eth_start:  0x00002002
-    //DMA_STATUS status before eth_start:  0x00670405
-    //DBG: Transmit descriptor addr to be read from dma is 0x0011d17c !
-    //DBG: the RX descriptor addr previously set to dma is 0x0011d19c !
-    //CLKmanager: clock enable status are, we will enable emac1 bit  0x00000fff
-    //GMAC_CONFIG status after eth_start:  0x00e0cc0c
-    //DMA_OPMODE status after eth_start:  0x00002002
-    //DMA_STATUS status after eth_start:  0x0011d17c
-    //DBG: Transmit descriptor addr to be read from dma after eth_start is 0x0011d17c !
-    //DBG: the RX descriptor addr previously set to dma after eth_start is 0x0011d19c !
-//
 }
 
 
@@ -598,19 +566,19 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     }
 
 
-    alt_eth_phy_dump_all(emac->instance);
-    printf( "Hufei: Before PHY config PHY regs dump done\r\n" );  
+    //alt_eth_phy_dump_all(emac->instance);
+    //printf( "Hufei: Before PHY config PHY regs dump done\r\n" );  
 
 
 
     
     
     /* Configure the PHY */
-    status = alt_eth_phy_config(emac->instance);
-    if (status != ALT_E_SUCCESS) { return status; }    
-
-    //status = alt_eth_phy_1g_config(emac->instance);
+    //status = alt_eth_phy_config(emac->instance);
     //if (status != ALT_E_SUCCESS) { return status; }    
+
+    status = alt_eth_phy_1g_config(emac->instance);
+    if (status != ALT_E_SUCCESS) { return status; }    
 
     //printf( "Hufei: PHY config done\r\n" );
 
@@ -619,8 +587,8 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
 
     //printf( "Hufei: PHY loopback done\r\n" );
     //
-    alt_eth_phy_dump_all(emac->instance);
-    printf( "Hufei: After PHY config PHY regs dump done\r\n" );  
+    //alt_eth_phy_dump_all(emac->instance);
+    //printf( "Hufei: After PHY config PHY regs dump done\r\n" );  
     /* Reset the Ethernet */
     status = alt_eth_software_reset(emac->instance);
     if (status != ALT_E_SUCCESS) { 
@@ -1579,15 +1547,15 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
         //    printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
         //}
 
-        void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
-        size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
+        //void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
+        //size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
 
 
-        ////dump_ddr(dma_buf,alen);
+        //////dump_ddr(dma_buf,alen);
 
-        status = alt_cache_system_clean(dma_buf, alen);
+        //status = alt_cache_system_clean(dma_buf, alen);
 
-        ////dump_ddr(dma_buf,alen);
+        //////dump_ddr(dma_buf,alen);
 
 
         if (status != ALT_E_SUCCESS) {

@@ -48,7 +48,8 @@ extern void sinTest(uint8_t* dsp_arr);
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 #ifdef ETH_TEST
-static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32)));
+//static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32))); //create emac buffer in FPGA OCRAM
+static alt_eth_emac_instance_t emac1;                                                                                            //
 int eth_main(alt_eth_emac_instance_t* emac);
 #endif
 #ifdef DMA_TEST
@@ -240,7 +241,8 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     //};
     uint8_t test_frame[64] = {
         0x24, 0x4b, 0xfe, 0xe0, 0xef, 0x05, 
-        0x8e, 0x87, 0x5a, 0xae, 0xe1, 0x8f, 
+       // 0x8e, 0x87, 0x5a, 0xae, 0xe1, 0x8f,
+        0x00, 0x07, 0xed, 0x42, 0x9a, 0x48,
         0x08, 0x00, 
         0x45, 
         0x00,
@@ -258,7 +260,11 @@ int eth_main(alt_eth_emac_instance_t* emac) {
         0x02, 0xd2, 
         0x00, 0x01, 
         0xfd, 0x00, 0x00, 0x00, 0x39, 0x2a,
-        0x0b, 0x00, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15
+        0x0b, 0x00, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+        //16byte per line payload
+        //0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,
+        //0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15,0x15
+
        };
 
     //uint8_t test_frame[64] = {
@@ -277,9 +283,9 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     emac->instance = 1;
     //alt_eth_emac_hps_init(emac->instance);
     //alt_eth_emac_dma_init(emac->instance);
-    //alt_eth_emac_dma_init(emac); //mine
+    alt_eth_emac_dma_init(emac); //mine
     
-    alt_eth_dma_mac_config(emac);
+    //alt_eth_dma_mac_config(emac);
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
     printf( "SUCCESS: gmac eth1 link state after config is 0x%08x\r\n",(unsigned int)stat );
     //send packet

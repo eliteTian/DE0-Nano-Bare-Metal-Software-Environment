@@ -22,5 +22,14 @@ check GMAC speed. PS FES TC bits. can check Linux
 if I fprint 109, wireshark is able to detect, 0-108
 if I fprint 108, wireshark is not able to detect 0-107
 
-cache coherency issue. Need to figure out cache
+cache coherency issue. Need to figure out cache: no cache issue
+
+20251208:
+64byte test frame no cache issue. all sent ok.
+greater than 64byte is not able to be sent correctly.
+Mile stone:
+1.Figure out how to send any length frame. Legal: 64-1532bytes
+2.Receive first 64byte frame.
+3.Receive any length frame.
+4.Implement receive interrupt to automate receive frames.
 
