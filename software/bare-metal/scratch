@@ -28,8 +28,11 @@ cache coherency issue. Need to figure out cache: no cache issue
 64byte test frame no cache issue. all sent ok.
 greater than 64byte is not able to be sent correctly.
 Mile stone:
-1.Figure out how to send any length frame. Legal: 64-1532bytes
+1.Figure out how to send any length frame. Legal: 64-1518bytes
 2.Receive first 64byte frame.
 3.Receive any length frame.
 4.Implement receive interrupt to automate receive frames.
 
+20251209:
+-able to send 112 bytes by changing fixed burst to incr burst. dma_bus_mode.fb=0
+-able to send 1518 max non-jumbo frame in one single descriptor

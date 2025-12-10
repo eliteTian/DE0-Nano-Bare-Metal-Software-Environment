@@ -61,7 +61,10 @@
 //    printf("Addr @ 0x%08x value is 0x%08x.\r\n", (unsigned int)(addr), (unsigned int)(val));
 //}
 
-static uint8_t MAC_ADDR[6] = { 0x82,0xa3,0xf5,0x17,0x9e,0xc1};
+//uint8_t MAC_ADDR[6] = { 0x82,0xa3,0xf5,0x17,0x9e,0xc1};
+
+uint8_t MAC_ADDR[6] = { 0x00, 0x07, 0xed, 0x42, 0x9a, 0x48};
+
 
 void alt_dbg_reg(const char *name, void *addr) {
     uint32_t val = alt_read_word(addr);
@@ -293,15 +296,15 @@ void dmaInit(alt_eth_emac_instance_t * emac) {
     dbg_data = alt_read_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance]));
     printf("DBG: Addr: 0x%08x,Data=0x%08x\r\n",dbg_addr,dbg_data);
 
-    alt_replbits_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance]), //need to use replace bits than direct write
+    alt_write_word(ALT_EMAC_DMA_BUS_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance]), //need to use replace bits than direct write
         
-          /*| ALT_EMAC_DMA_BUS_MOD_USP_SET_MSK      */     /* Use separate PBL */ 
+          ALT_EMAC_DMA_BUS_MOD_USP_SET_MSK          /* Use separate PBL */ 
           /*| ALT_EMAC_DMA_BUS_MOD_AAL_SET_MSK      */     /* Address Aligned Beats */
           /*| ALT_EMAC_DMA_BUS_MOD_EIGHTXPBL_SET(1) */
-          /*| ALT_EMAC_DMA_BUS_MOD_PBL_SET(8)       */     /* Programmable Burst Length */
+          | ALT_EMAC_DMA_BUS_MOD_PBL_SET(32)            /* Programmable Burst Length */
           /*| ALT_EMAC_DMA_BUS_MOD_RPBL_SET(8)      */     /* Programmable Burst Length */
-             ALT_EMAC_DMA_BUS_MOD_FB_SET_MSK,              /* Fixed Burst */
-            ALT_EMAC_DMA_BUS_MOD_FB_SET(1)
+         /* |   ALT_EMAC_DMA_BUS_MOD_FB_SET_MSK   */          /* Fixed Burst */
+          //  ALT_EMAC_DMA_BUS_MOD_FB_SET(1)
         ); 
 
     //DBG: Addr: 0xff703000,Data=0x00020100
@@ -1547,15 +1550,15 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
         //    printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
         //}
 
-        //void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
-        //size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
+        void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
+        size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
 
 
-        //////dump_ddr(dma_buf,alen);
+        ////dump_ddr(dma_buf,alen);
 
-        //status = alt_cache_system_clean(dma_buf, alen);
+        status = alt_cache_system_clean(dma_buf, alen);
 
-        //////dump_ddr(dma_buf,alen);
+        ////dump_ddr(dma_buf,alen);
 
 
         if (status != ALT_E_SUCCESS) {
@@ -1706,5 +1709,55 @@ void alt_eth_mac_check_mii_link_status(uint32_t instance)
     }
 }
 
+void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr) {
+    uint32_t i;
+    uint32_t pay_load_cnt = len - 14;
+    //pass dst addr
+    uint8_t src_addr[6] = {0x00, 0x07, 0xed, 0x42, 0x9a, 0x48};
+    uint8_t* p = src_addr;
+    for(i=0;i<6;i++) {
+        *arr++ = *dst_addr_arr++;
+    }
+    //pass src addr
+    for(i=0;i<6;i++) {
+        *arr++ = *p++;
+    }
+    //pass type
+    *arr++ = 0x88;
+    *arr++ = 0xB5;
+    for(i=0;i<pay_load_cnt;i++) {
+        *arr++ = i;
+    }
+}
+
+ALT_STATUS_CODE scatter_frame(uint8_t * pkt, uint32_t len, uint32_t first, uint32_t last, alt_eth_emac_instance_t * emac) {
+//this function calls alt_eth_send_packet, based upon the size, assign arguments correctly.
+//for instance, if buffer size is 128, then a frame of 200 size has to be sent calling this function
+//twice, first half sets first and second half sets last.
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    uint32_t num=len/ETH_BUFFER_SIZE;
+    uint32_t rem=len%ETH_BUFFER_SIZE;
+    uint32_t i, ind_offset;
+    if(rem) { //test frame is not a multiple of individual buffer
+        num++; //at least 2
+        for(i=0;i<num;i++) {
+            if(i==0) {
+                ind_begin = 0;
+                ind_end = ind_begin + ETH_BUFFER_SIZE - 1;
+                alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,1,0,emac);
+            } else if(i==num-1) {
+
+
+            }
+
+                
+        }
+    } else { // test frame is a multiple of individual buffer
+
+    }
+
+    return status;
+
+}
 
 
