@@ -39,7 +39,7 @@
 //tests to perform
 #define ETH_TEST
 //#define DMA_TEST
-#define FRAM_BUF_SIZE 200
+#define FRAM_BUF_SIZE 500
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
@@ -203,6 +203,8 @@ int eth_main(alt_eth_emac_instance_t* emac) {
 
     uint8_t test_frame[FRAM_BUF_SIZE];
     ethernet_raw_frame_gen( sizeof(test_frame),MAC_ADDR,test_frame);
+
+
     
     emac->instance = 1;
     alt_eth_emac_dma_init(emac); //mine
@@ -213,10 +215,9 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     printf( "Hufei: get ready to send packet\r\n" );
     for( i=0;i<1;i++) {
 
-        mysleep(1000*1000);
-        alt_eth_send_packet(test_frame, sizeof(test_frame), 1, 1, emac);
-        mysleep(5000*1000);
 
+        //alt_eth_send_packet(test_frame, sizeof(test_frame), 1, 1, emac);
+        scatter_frame(test_frame, sizeof(test_frame), emac);
 
         //for (j = 0; j < 32; j++) { //should be 32
         //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", j, tx_buf_p[j]);

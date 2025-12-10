@@ -324,7 +324,9 @@ void dmaInit(alt_eth_emac_instance_t * emac) {
     alt_eth_setup_rxdesc(emac);
     alt_eth_setup_txdesc(emac);
     //9.Program the following fields to initialize the mode of operation in Register 6
-    alt_write_word(ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance]), 0);
+    alt_write_word(ALT_EMAC_DMA_OP_MOD_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance]), ALT_EMAC_DMA_OP_MOD_TSF_SET_MSK);
+
+    
     //10.Clear the interrupt requests, by writing to those bits of the status register (interrupt bits only) that are set
     interrupt_mask = ALT_EMAC_DMA_INT_EN_NIE_SET_MSK |
                      /*ALT_EMAC_DMA_INT_EN_AIE_SET_MSK |
@@ -1427,7 +1429,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
 
     
     /* check if len is too large */
-    if (len >= ETH_BUFFER_SIZE)
+    if (len > ETH_BUFFER_SIZE)
     {
         return(ALT_E_ERROR);
     }
@@ -1545,10 +1547,10 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
             alt_eth_dma_resume_dma_tx(emac->instance);
         }
         
-        //for (i = 0; i < n; i++) {
-        //    pa = (uint32_t)p;
-        //    printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
-        //}
+        for (i = 0; i < n; i++) {
+            pa = (uint32_t)p;
+            printf("PRE_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+        }
 
         void* dma_buf = (void*) ((uintptr_t)emac & ~(ALT_CACHE_LINE_SIZE - 1));// emac->tx_buf + (emac->tx_current_desc_number * ETH_BUFFER_SIZE);
         size_t alen = (n + ALT_CACHE_LINE_SIZE - 1) & ~(ALT_CACHE_LINE_SIZE - 1);
@@ -1568,7 +1570,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
         alt_eth_start(emac->instance);
         
         p = (uint32_t *)emac;
-        for (i = 0; i < n/n; i++) {
+        for (i = 0; i < n; i++) {
             pa = (uint32_t)p;
             printf("POST_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
         }        
@@ -1730,30 +1732,45 @@ void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr) {
     }
 }
 
-ALT_STATUS_CODE scatter_frame(uint8_t * pkt, uint32_t len, uint32_t first, uint32_t last, alt_eth_emac_instance_t * emac) {
+ALT_STATUS_CODE scatter_frame(uint8_t * pkt, uint32_t len, alt_eth_emac_instance_t * emac) {
 //this function calls alt_eth_send_packet, based upon the size, assign arguments correctly.
 //for instance, if buffer size is 128, then a frame of 200 size has to be sent calling this function
 //twice, first half sets first and second half sets last.
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
     uint32_t num=len/ETH_BUFFER_SIZE;
     uint32_t rem=len%ETH_BUFFER_SIZE;
-    uint32_t i, ind_offset;
+    uint32_t i, ind_begin;
     if(rem) { //test frame is not a multiple of individual buffer
         num++; //at least 2
         for(i=0;i<num;i++) {
-            if(i==0) {
-                ind_begin = 0;
-                ind_end = ind_begin + ETH_BUFFER_SIZE - 1;
-                alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,1,0,emac);
-            } else if(i==num-1) {
-
-
+            ind_begin = i*ETH_BUFFER_SIZE;
+            if(num==1) {
+                alt_eth_send_packet(pkt+ind_begin,rem,1,1,emac);
+            } else {
+                if(i==0) { //first 
+                    alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,1,0,emac);
+                } else if(i==num-1) { //last
+                    alt_eth_send_packet(pkt+ind_begin,rem,0,1,emac);
+                } else {
+                    alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,0,0,emac);
+                } 
             }
-
-                
         }
     } else { // test frame is a multiple of individual buffer
-
+        for(i=0;i<num;i++) {
+            ind_begin = i*ETH_BUFFER_SIZE;
+            if(num==1) {
+                alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,1,1,emac);
+            } else {
+                if(i==0) { //first 
+                    alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,1,0,emac);
+                } else if(i==num-1) { //last
+                    alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,0,1,emac);
+                } else {
+                    alt_eth_send_packet(pkt+ind_begin,ETH_BUFFER_SIZE,0,0,emac);
+                }
+            }
+        }
     }
 
     return status;
