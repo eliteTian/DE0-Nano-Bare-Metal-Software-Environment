@@ -39,7 +39,7 @@
 //tests to perform
 #define ETH_TEST
 //#define DMA_TEST
-#define FRAM_BUF_SIZE 500
+#define FRAM_BUF_SIZE 384
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
@@ -182,7 +182,7 @@ void ledTest(void){
 int eth_main(alt_eth_emac_instance_t* emac) {
 
 	//uint32_t  gmac_version;
-	uint32_t  stat;
+	uint32_t  stat,addr;
     uint32_t  i;
 
     //uint8_t test_frame[96] = {
@@ -235,7 +235,23 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     
     }
     printf( "Hufei: packet sent, check on wireshark\r\n" );
-    mysleep(100000*1000);
+    while(1) { //poll for the moment until watchdog triggers
+        mysleep(1000*1000);
+
+        addr = 0xFF702180; 
+        stat = alt_read_word( addr);
+        printf("DBG: Number of good frames received is          0x%08x,0x%08x !\n",addr,stat);
+
+        addr = 0xFF702184; 
+        stat = alt_read_word( addr);
+        printf("DBG: Number of bytes received is                0x%08x,0x%08x !\n",addr,stat);
+        
+        addr = 0xFF702188; 
+        stat = alt_read_word( addr);
+        printf("DBG: Number of bytes in good frames received is 0x%08x,0x%08x !\n",addr,stat);
+
+    }
+
     return 0;
 
 }

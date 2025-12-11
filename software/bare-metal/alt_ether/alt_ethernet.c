@@ -391,7 +391,8 @@ void emacInit(alt_eth_emac_instance_t * emac) {
         alt_mac_config_reg_settings &= ALT_EMAC_GMAC_MAC_CFG_PS_CLR_MSK;     
         dprintf("Auto Negotiation speed = 1000\n"); 
     } 
-
+        //set mac addr
+    alt_eth_mac_set_mac_addr(MAC_ADDR,emac->instance);
     
     printf( "CRITICAL: GMAC config register to be written is 0x%08x,0x%08x,0x%08x  \r\n",alt_mac_config_reg_settings,phy_speed,phy_duplex_status );
     alt_write_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]), alt_mac_config_reg_settings);
