@@ -175,6 +175,8 @@ void alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac){
     emacHPSIFInit(emac->instance);
     dmaInit(emac);
     emacInit(emac);
+    printf( "Hufei: emac and dma all initialized\r\n" );
+
 }
 
 void systemConfig(uint32_t instance) {
@@ -393,14 +395,21 @@ void emacInit(alt_eth_emac_instance_t * emac) {
     } 
         //set mac addr
     alt_eth_mac_set_mac_addr(MAC_ADDR,emac->instance);
+
+    /* Disable MAC interrupts */
+    alt_eth_mac_set_irq_reg(ALT_EMAC_GMAC_INT_STAT_LPIIS_SET_MSK |   /* Disable Low Power IRQ */
+                        ALT_EMAC_GMAC_INT_STAT_TSIS_SET_MSK,         /* Disable Timestamp IRQ */
+                        ALT_ETH_DISABLE, emac->instance);
     
     printf( "CRITICAL: GMAC config register to be written is 0x%08x,0x%08x,0x%08x  \r\n",alt_mac_config_reg_settings,phy_speed,phy_duplex_status );
     alt_write_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]), alt_mac_config_reg_settings);
         /* Disable promiscuous mode */
     alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),1, 0);  
-       
+    printf("Initializing irq handler\n");   
     /* Initialize the ethernet irq handler */   
     alt_eth_irq_init(emac, alt_eth_irq_callback);
+    printf("Initializing irq handler done\n");   
+
 }
 
 
@@ -478,7 +487,7 @@ ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callbac
 {
     
     ALT_STATUS_CODE status = ALT_E_SUCCESS;    
-    
+    uint32_t int_target = 0;
     if (emac->instance==0) { emac->irqnum = ALT_INT_INTERRUPT_EMAC0_IRQ; }
     if (emac->instance==1) { emac->irqnum = ALT_INT_INTERRUPT_EMAC1_IRQ; }
          
@@ -486,63 +495,99 @@ ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callbac
     status = alt_int_isr_register( emac->irqnum,
                             callback,
                             (void *)emac);
+    
+    printf("IRQ routine registered\n");   
 
     /* Configure the EMAC as Level. */
     if (status == ALT_E_SUCCESS)
     {
         status = alt_int_dist_trigger_set(emac->irqnum,
                                          ALT_INT_TRIGGER_AUTODETECT);
+        printf("IRQ routine trigger set registered\n");    
     }
-   
+ 
     /* Configure the EMAC priority */
     if (status == ALT_E_SUCCESS)
     {  
         status = alt_int_dist_priority_set(emac->irqnum, 16);
+        printf("IRQ routine priority set registered\n");    
     }
-    
+  
     /* Set CPUs 0 and 1 as the target. */
-    if (status == ALT_E_SUCCESS)
-    {                    
-        status = alt_int_dist_target_set(emac->irqnum, 3);
-    }
+    //if (status == ALT_E_SUCCESS)
+    //{                    
+    //    status = alt_int_dist_target_set(emac->irqnum, 3); //only cpu0 is there
+    //    printf("IRQ target CPU set registered\n");  
+    //}
+
+    if (   (status == ALT_E_SUCCESS)
+        && (emac->irqnum >= 32)) /* Ignore target_set() for non-SPI interrupts. */
+    {
+        if (int_target == 0)
+        {
+            int_target = (1 << alt_int_util_cpu_count()) - 1;
+        }
+        status = alt_int_dist_target_set(emac->irqnum, int_target);
+        printf("IRQ target CPU set registered\n");          
+    }    
     
     /* Enable the interrupt in the Distributor. */
     if (status == ALT_E_SUCCESS)
     {
         status = alt_int_dist_enable(emac->irqnum);
+        printf("IRQ enabled in distributor\n");  
     }
-
+ 
     return status;
 }
 
 void alt_eth_irq_callback(uint32_t icciar, void * context)
 {
-
-    uint32_t status;
+    printf("IRQ callback called\n");  
+    uint32_t status,dma_status;
     alt_eth_emac_instance_t * emac;
    
     emac = context;
-       
+    alt_eth_delay(ETH_RESET_DELAY);
+  
     /* Check to make sure this is a valid interrupt. */
     if (icciar != emac->irqnum) { return; }
-              
+
+    status = alt_read_word(0xFF702038); //check if there is link status change
+    //printf("Call back reading gmac int status is 0x%08x \n",status );
+    if(status) {
+        status = alt_read_word(0xFF7020D8); //read S/RGMII control status register to clear interrupt
+    }
+      
     status = alt_eth_dma_get_status_reg(emac->instance) & emac->interrupt_mask;
+    //printf("Call back reading dma int status is 0x%08x \n",status );
+
+    
                                          
     if (status & ALT_EMAC_DMA_INT_EN_NIE_SET_MSK )  
     {
-        alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_INT_EN_NIE_SET_MSK, emac->instance);        
+        alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_INT_EN_NIE_SET_MSK, emac->instance);     
+        printf( "Hufei: Normal Interrupt request asserted\r\n" );
     }
     
     if (status & ALT_EMAC_DMA_INT_EN_TIE_SET_MSK ) 
     {
         emac->txints++;
-        alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_INT_EN_TIE_SET_MSK, emac->instance);        
+        alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_INT_EN_TIE_SET_MSK, emac->instance);    
+        printf( "Hufei: TX Interrupt request asserted\r\n" );
+        
     }
         
     if (status & ALT_EMAC_DMA_INT_EN_RIE_SET_MSK)
     {
-        emac->rxints++;        
-        alt_eth_dma_clear_status_bits( ALT_EMAC_DMA_INT_EN_RIE_SET_MSK, emac->instance);         
+        emac->rxints++;    
+        dma_status = alt_read_word(0xFF703014);
+        printf("Call back reading dma int status is 0x%08x \n",dma_status );
+
+        alt_eth_dma_clear_status_bits( ALT_EMAC_DMA_INT_EN_RIE_SET_MSK, emac->instance);   
+        printf( "Hufei: Receive Interrupt request asserted\r\n" );
+
+
     }
 
 }
@@ -560,7 +605,7 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
     /* Reset the EMAC */
     alt_eth_reset_mac(emac->instance);
 
-    printf( "Hufei: EMAC reset done\r\n" );
+
 
      
     /* Reset the PHY  */
@@ -1226,7 +1271,7 @@ alt_eth_set_reset_state_t alt_eth_dma_check_status_reg(uint32_t dma_bit_mask, ui
 
 void alt_eth_dma_clear_status_bits(uint32_t dma_bit_mask, uint32_t instance)
 {
-    if (instance > 2) { return; }
+    if (instance > 1) { return; }
     
     /* Clear the selected ETHERNET DMA bit(s) */
     alt_write_word(ALT_EMAC_DMA_STAT_ADDR(Alt_Emac_Dma_Grp_Addr[instance]), dma_bit_mask);
@@ -1234,7 +1279,7 @@ void alt_eth_dma_clear_status_bits(uint32_t dma_bit_mask, uint32_t instance)
 
 void alt_eth_dma_set_irq_reg(uint32_t dma_irq_mask, alt_eth_enable_disable_state_t new_state, uint32_t instance)
 {
-    if (instance > 2) { return; }
+    if (instance > 1) { return; }
     
     if (new_state != ALT_ETH_DISABLE)
     {

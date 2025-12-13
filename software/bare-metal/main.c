@@ -92,7 +92,12 @@ int main(void) {
         ALT_PRINTF("SUCCESS: CACHE_ENABLE SUCCESSFUL, %" PRIi32 ".\n", status);
     }
 
-
+    status = socfpga_int_start();
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: Interrupt init failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: Interrupt init SUCCESSFUL, %" PRIi32 ".\n", status);
+    }
 
     //enable watchdog to do a warm reset upon timeout
     watchDogInit();
@@ -114,10 +119,7 @@ int main(void) {
     dma_main();
 #endif
     
-    if (status == ALT_E_SUCCESS)
-    {
-        status = socfpga_int_start();
-    }
+    while(1);
 
     
 	return( 0 );
@@ -207,6 +209,10 @@ int eth_main(alt_eth_emac_instance_t* emac) {
 
     
     emac->instance = 1;
+    /* Initialize the ethernet irq handler */   
+    //alt_eth_irq_init(emac, alt_eth_irq_callback);
+    //printf("Initializing irq handler done\n");
+    
     alt_eth_emac_dma_init(emac); //mine
     //alt_eth_dma_mac_config(emac);
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
@@ -235,23 +241,30 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     
     }
     printf( "Hufei: packet sent, check on wireshark\r\n" );
-    while(1) { //poll for the moment until watchdog triggers
-        mysleep(1000*1000);
+  //  while(1) { //poll for the moment until watchdog triggers
+        mysleep(5000*1000);
 
         addr = 0xFF702180; 
         stat = alt_read_word( addr);
-        printf("DBG: Number of good frames received is          0x%08x,0x%08x !\n",addr,stat);
+        printf("DBG: Number of good frames received is                                0x%08x,0d%08d !\n",addr,stat);
 
         addr = 0xFF702184; 
         stat = alt_read_word( addr);
-        printf("DBG: Number of bytes received is                0x%08x,0x%08x !\n",addr,stat);
+        printf("DBG: Number of bytes received is                0x%08x,0d%08d !\n",addr,stat);
         
         addr = 0xFF702188; 
         stat = alt_read_word( addr);
-        printf("DBG: Number of bytes in good frames received is 0x%08x,0x%08x !\n",addr,stat);
+        printf("DBG: Number of bytes in good frames received is 0x%08x,0d%08d !\n",addr,stat);
 
-    }
+        addr = 0xFF703014; 
+        stat = alt_read_word( addr); 
+        printf("DBG: DMA interrupt status is                    0x%08x,0x%08x !\n",addr,stat);        
 
+ //   }
+
+//0xff703014,0x00670405
+//0xff703014,0x00670445
+//0xff703014,0x006904c5    
     return 0;
 
 }
