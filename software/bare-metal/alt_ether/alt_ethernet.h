@@ -730,6 +730,8 @@ void alt_eth_mac_pause_ctrl_frame(uint32_t instance);
  *
  */
 void alt_eth_mac_set_mac_addr(uint8_t *address, uint32_t instance);
+void alt_eth_mac_set_sa_filter(uint8_t *address, uint32_t instance);
+void alt_eth_mac_set_da_filter(uint8_t *address, uint32_t instance);
 
 /******************************************************************************/
 /*!

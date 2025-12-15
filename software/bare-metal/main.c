@@ -44,7 +44,7 @@ extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
 extern void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr);
-extern void dump_frame_buf(void);
+extern void dump_frame_buf(alt_eth_emac_instance_t * emac );
 extern uint8_t MAC_ADDR[6];    
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
@@ -261,7 +261,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
         stat = alt_read_word( addr); 
         printf("DBG: DMA interrupt status is                    0x%08x,0x%08x !\n",addr,stat);   
 
-        dump_frame_buf();
+        dump_frame_buf(emac);
 
   //  }
 

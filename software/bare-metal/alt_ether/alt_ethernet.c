@@ -64,12 +64,23 @@
 //uint8_t MAC_ADDR[6] = { 0x82,0xa3,0xf5,0x17,0x9e,0xc1};
 
 uint8_t MAC_ADDR[6] = { 0x00, 0x07, 0xed, 0x42, 0x9a, 0x48};
+uint8_t SA_ADDR[6]  = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 static uint8_t frame_buffer[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf0[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf1[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf2[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf3[ETH_BUFFER_SIZE];
 
+static void swap_addr(uint8_t* arr) {
+    uint8_t temp;
+    int i = 0;
+    for(i=0;i<6;i++) {
+        temp = arr[i];
+        arr[i] = arr[i+6];
+        arr[i+6]=temp;
+    }
+
+}
 
 
 void alt_dbg_reg(const char *name, void *addr) {
@@ -431,6 +442,7 @@ void emacInit(alt_eth_emac_instance_t * emac) {
     if (emac->instance > 1) { return; }
     uint32_t alt_mac_config_reg_settings = 0;
     uint32_t phy_duplex_status, phy_speed;
+    uint32_t stat;
     ALT_STATUS_CODE status = ALT_E_SUCCESS;    
 
     /* Set the Gmac Configuration register */
@@ -462,9 +474,16 @@ void emacInit(alt_eth_emac_instance_t * emac) {
         alt_mac_config_reg_settings &= ALT_EMAC_GMAC_MAC_CFG_PS_CLR_MSK;     
         dprintf("Auto Negotiation speed = 1000\n"); 
     } 
-        //set mac addr
+    //set mac addr
     alt_eth_mac_set_mac_addr(MAC_ADDR,emac->instance);
-
+    //set filter sa addr
+    alt_eth_mac_set_sa_filter(SA_ADDR,emac->instance);
+    
+    stat = alt_read_word( 0xFF702048);
+    printf("DBG: Filter register is 0x%08x !\n",stat);
+    stat = alt_read_word( 0xFF70204C);
+    printf("DBG: Filter register is 0x%08x !\n",stat);
+    
     /* Disable MAC interrupts */
     alt_eth_mac_set_irq_reg(ALT_EMAC_GMAC_INT_STAT_LPIIS_SET_MSK |   /* Disable Low Power IRQ */
                         ALT_EMAC_GMAC_INT_STAT_TSIS_SET_MSK |       /* Disable Timestamp IRQ */
@@ -655,11 +674,11 @@ void alt_eth_irq_callback(uint32_t icciar, void * context)
         emac->rxints++;    
         alt_eth_dma_clear_status_bits( ALT_EMAC_DMA_INT_EN_RIE_SET_MSK, emac->instance);   
         printf( "Hufei: Receive Interrupt request asserted\r\n" );
-        discard_buff(emac);
+        //discard_buff(emac);
         dma_status = alt_read_word(0xFF703014);
         alt_eth_get_packet(frame_buffer,&rcv_len,emac);
+        swap_addr(frame_buffer);
         printf("Call back reading dma int status is 0x%08x, received packet len is 0x%08x \n", dma_status, rcv_len );
-        
         scatter_frame(frame_buffer,rcv_len,emac);
         
     }
@@ -1200,12 +1219,45 @@ void alt_eth_mac_set_irq_reg(uint32_t mac_irq_mask, alt_eth_enable_disable_state
                          mac_irq_mask);
     }
 }
+
 void alt_eth_mac_set_sa_filter(uint8_t *address, uint32_t instance){
+    if (instance > 1) { return; }
+    uint32_t tmpreg;
+      
+    /* Calculate the selected MAC address high register */
+    tmpreg = ((uint32_t)address[5] << 8) | (uint32_t)address[4] | ALT_EMAC_GMAC_MAC_ADDR1_HIGH_SA_SET_MSK | ALT_EMAC_GMAC_MAC_ADDR1_HIGH_AE_SET_MSK ;
+    
+    /* Load the selected MAC address high register */
+    alt_write_word(ALT_EMAC_GMAC_MAC_ADDR1_HIGH_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]), 
+                   tmpreg);
+    
+    /* Calculate the selected MAC address low register */
+    tmpreg = ((uint32_t)address[3] << 24) | ((uint32_t)address[2] << 16) | 
+             ((uint32_t)address[1] << 8) | address[0];
+                
+     /* Load the selected MAC address low register */
+    alt_write_word(ALT_EMAC_GMAC_MAC_ADDR1_LOW_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]), tmpreg);
+
 
 }
 
 void alt_eth_mac_set_da_filter(uint8_t *address, uint32_t instance){
-
+    if (instance > 1) { return; }
+    uint32_t tmpreg;
+      
+    /* Calculate the selected MAC address high register */
+    tmpreg = ((uint32_t)address[5] << 8) | (uint32_t)address[4] | ALT_EMAC_GMAC_MAC_ADDR1_HIGH_AE_SET_MSK ;
+    
+    /* Load the selected MAC address high register */
+    alt_write_word(ALT_EMAC_GMAC_MAC_ADDR1_HIGH_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]), 
+                   tmpreg);
+    
+    /* Calculate the selected MAC address low register */
+    tmpreg = ((uint32_t)address[3] << 24) | ((uint32_t)address[2] << 16) | 
+             ((uint32_t)address[1] << 8) | address[0];
+                
+     /* Load the selected MAC address low register */
+    alt_write_word(ALT_EMAC_GMAC_MAC_ADDR1_LOW_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]), tmpreg);
 }
 
 
