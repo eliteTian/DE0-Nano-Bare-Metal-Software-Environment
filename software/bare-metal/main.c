@@ -44,12 +44,13 @@ extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
 extern void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr);
+extern void dump_frame_buf(void);
 extern uint8_t MAC_ADDR[6];    
 void mysleep(uint32_t cycles);
 void dbgReg(uint32_t addr);
 #ifdef ETH_TEST
-//static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32))); //create emac buffer in FPGA OCRAM
-static alt_eth_emac_instance_t emac1;                                                                                            //
+static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32))); //create emac buffer in FPGA OCRAM
+//static alt_eth_emac_instance_t emac1;                                                                                            //
 int eth_main(alt_eth_emac_instance_t* emac);
 #endif
 #ifdef DMA_TEST
@@ -112,7 +113,7 @@ int main(void) {
     //ethernet module test, including init
 #ifdef ETH_TEST
     eth_main(&emac1);
-    ethDbg();
+    //ethDbg();
 #endif
     
 #ifdef DMA_TEST
@@ -185,7 +186,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
 
 	//uint32_t  gmac_version;
 	uint32_t  stat,addr;
-    uint32_t  i;
+    //uint32_t  i;
 
     //uint8_t test_frame[96] = {
     //    /* DESTINATION: ASUSTekCOMPU_: //6bytes*/    //  0x24,0x4b,0xfe,0xe0,0xef,0x05,
@@ -219,30 +220,30 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     printf( "SUCCESS: gmac eth1 link state after config is 0x%08x\r\n",(unsigned int)stat );
     //send packet
     printf( "Hufei: get ready to send packet\r\n" );
-    for( i=0;i<1;i++) {
+    //for( i=0;i<1;i++) {
 
 
-        //alt_eth_send_packet(test_frame, sizeof(test_frame), 1, 1, emac);
-        scatter_frame(test_frame, sizeof(test_frame), emac);
+    //alt_eth_send_packet(test_frame, sizeof(test_frame), 1, 1, emac);
+    //scatter_frame(test_frame, sizeof(test_frame), emac);
 
-        //for (j = 0; j < 32; j++) { //should be 32
-        //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", j, tx_buf_p[j]);
-        //}
-        ////mysleep(50000*1000);
-        ////for (j = 0; j < n; j++) {
-        ////    printf("all content: DBG[%d]: 0x%08x\r\n", j, p[j]);
-        ////}
+    //    //for (j = 0; j < 32; j++) { //should be 32
+    //    //    printf("tx_buf content: DBG[%d]: 0x%08x\r\n", j, tx_buf_p[j]);
+    //    //}
+    //    ////mysleep(50000*1000);
+    //    ////for (j = 0; j < n; j++) {
+    //    ////    printf("all content: DBG[%d]: 0x%08x\r\n", j, p[j]);
+    //    ////}
 
-        //for (i = 0; i < 4; i++) {
-        //    printf("tx_desc content: DBG[%d]: 0x%08x\r\n", i, tx_desc_word[i]);
-        //}
+    //    //for (i = 0; i < 4; i++) {
+    //    //    printf("tx_desc content: DBG[%d]: 0x%08x\r\n", i, tx_desc_word[i]);
+    //    //}
 
+    //        printf( "Hufei: packet sent, check on wireshark\r\n" );
+    //
+    //}
 
-    
-    }
-    printf( "Hufei: packet sent, check on wireshark\r\n" );
-  //  while(1) { //poll for the moment until watchdog triggers
-        mysleep(5000*1000);
+   // while(1) { //poll for the moment until watchdog triggers
+        mysleep(50000*1000);
 
         addr = 0xFF702180; 
         stat = alt_read_word( addr);
@@ -258,9 +259,11 @@ int eth_main(alt_eth_emac_instance_t* emac) {
 
         addr = 0xFF703014; 
         stat = alt_read_word( addr); 
-        printf("DBG: DMA interrupt status is                    0x%08x,0x%08x !\n",addr,stat);        
+        printf("DBG: DMA interrupt status is                    0x%08x,0x%08x !\n",addr,stat);   
 
- //   }
+        dump_frame_buf();
+
+  //  }
 
 //0xff703014,0x00670405
 //0xff703014,0x00670445

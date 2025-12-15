@@ -219,8 +219,8 @@ ALT_STATUS_CODE alt_int_global_init()
         uint32_t periphbase = get_periphbase();
         alt_int_base_dist = periphbase + 0x1000;
         alt_int_base_cpu  = periphbase + 0x0100;
-        printf("IRQ: compute MPU submodule addresses, alt_int_base_dist is 0x%08x \n",alt_int_base_dist );  
-        printf("IRQ: compute MPU submodule addresses, alt_int_base_cpu is 0x%08x \n",alt_int_base_cpu );  
+        dprintf("IRQ: compute MPU submodule addresses, alt_int_base_dist is 0x%08x \n",alt_int_base_dist );  
+        dprintf("IRQ: compute MPU submodule addresses, alt_int_base_cpu is 0x%08x \n",alt_int_base_cpu );  
         
     }
 
@@ -230,8 +230,8 @@ ALT_STATUS_CODE alt_int_global_init()
         uint32_t icdictr = alt_read_word(alt_int_base_dist + 0x4);
         alt_int_count_cpu = ((icdictr >> 5) & 0x7) + 1;
         alt_int_count_int = ((icdictr & 0x1F) + 1) << 5;
-        printf("IRQ: compute MPU CPU counts, alt_int_count_cpu  is 0x%08x \n",alt_int_count_cpu );  
-        printf("IRQ: compute MPU interrupt counts,alt_int_count_int  is 0x%08x \n", alt_int_count_int);  
+        dprintf("IRQ: compute MPU CPU counts, alt_int_count_cpu  is 0x%08x \n",alt_int_count_cpu );  
+        dprintf("IRQ: compute MPU interrupt counts,alt_int_count_int  is 0x%08x \n", alt_int_count_int);  
 
     }
 
@@ -261,7 +261,7 @@ ALT_STATUS_CODE alt_int_global_init()
 
         /* Read it back to see which bits stick. */
         value = alt_read_word(alt_int_base_dist + 0x100 + i * sizeof(uint32_t)); /* icdisern */
-        printf("IRQ: Bank number %d, icdisern value is 0x%08x \n", i, value);          
+        dprintf("IRQ: Bank number %d, icdisern value is 0x%08x \n", i, value);          
         for (j = 0; j < 32; ++j)
         {
             if (((1 << j) & value) != 0)
@@ -434,15 +434,15 @@ ALT_STATUS_CODE alt_int_dist_enable(ALT_INT_INTERRUPT_t int_id)
     {
         uint32_t regoffset   = int_id >> 5;
         uint32_t regbitshift = int_id & 0x1F;
-        uint32_t dbg_val;
+        //uint32_t dbg_val;
 
-        dbg_val = alt_read_word(alt_int_base_dist + 0x100 + regoffset * sizeof(uint32_t));
-        printf("IRQ dist base enabling, alt_int_base_dist is 0x%08x, value is 0x%08x \n",(alt_int_base_dist + 0x100 + regoffset * sizeof(uint32_t)),dbg_val ); 
-        printf("IRQ dist base enabling, intended write value is 0x%08x \n",1<<regbitshift ); 
+        //dbg_val = alt_read_word(alt_int_base_dist + 0x100 + regoffset * sizeof(uint32_t));
+        //dprintf("IRQ dist base enabling, alt_int_base_dist is 0x%08x, value is 0x%08x \n",(alt_int_base_dist + 0x100 + regoffset * sizeof(uint32_t)),dbg_val ); 
+        //printf("IRQ dist base enabling, intended write value is 0x%08x \n",1<<regbitshift ); 
 
 
         alt_write_word(alt_int_base_dist + 0x100 + regoffset * sizeof(uint32_t), 1 << regbitshift); /* icdisern */
-        printf("IRQ dist base enabled\n");  
+        //printf("IRQ dist base enabled\n");  
 
         return ALT_E_SUCCESS;
     }
