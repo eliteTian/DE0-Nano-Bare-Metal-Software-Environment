@@ -65,13 +65,13 @@
 
 uint8_t MAC_ADDR[6] = { 0x00, 0x07, 0xed, 0x42, 0x9a, 0x48};
 uint8_t SA_ADDR[6]  = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
-static uint8_t frame_buffer[ETH_BUFFER_SIZE];
+uint8_t frame_buffer[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf0[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf1[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf2[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf3[ETH_BUFFER_SIZE];
 
-static void swap_addr(uint8_t* arr) {
+void swap_addr(uint8_t* arr) {
     uint8_t temp;
     int i = 0;
     for(i=0;i<6;i++) {
@@ -634,10 +634,9 @@ ALT_STATUS_CODE alt_eth_irq_init(alt_eth_emac_instance_t * emac, alt_int_callbac
 void alt_eth_irq_callback(uint32_t icciar, void * context)
 {
     printf("IRQ callback called\n");  
-    uint32_t status,dma_status;
+    uint32_t status;
     alt_eth_emac_instance_t * emac;
-    uint32_t rcv_len = 0;
-   
+
     emac = context;
     alt_eth_delay(ETH_RESET_DELAY);
   
@@ -658,14 +657,14 @@ void alt_eth_irq_callback(uint32_t icciar, void * context)
     if (status & ALT_EMAC_DMA_INT_EN_NIE_SET_MSK )  
     {
         alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_INT_EN_NIE_SET_MSK, emac->instance);     
-        printf( "Hufei: Normal Interrupt request asserted\r\n" );
+        //printf( "Hufei: Normal Interrupt request asserted\r\n" );
     }
     
     if (status & ALT_EMAC_DMA_INT_EN_TIE_SET_MSK ) 
     {
         emac->txints++;
         alt_eth_dma_clear_status_bits(ALT_EMAC_DMA_INT_EN_TIE_SET_MSK, emac->instance);    
-        printf( "Hufei: TX Interrupt request asserted\r\n" );
+        //printf( "Hufei: TX Interrupt request asserted\r\n" );
         
     }
         
@@ -673,14 +672,7 @@ void alt_eth_irq_callback(uint32_t icciar, void * context)
     {
         emac->rxints++;    
         alt_eth_dma_clear_status_bits( ALT_EMAC_DMA_INT_EN_RIE_SET_MSK, emac->instance);   
-        printf( "Hufei: Receive Interrupt request asserted\r\n" );
-        //discard_buff(emac);
-        dma_status = alt_read_word(0xFF703014);
-        alt_eth_get_packet(frame_buffer,&rcv_len,emac);
-        swap_addr(frame_buffer);
-        printf("Call back reading dma int status is 0x%08x, received packet len is 0x%08x \n", dma_status, rcv_len );
-        scatter_frame(frame_buffer,rcv_len,emac);
-        
+        //printf( "Hufei: Receive Interrupt request asserted\r\n" );        
     }
 
 }

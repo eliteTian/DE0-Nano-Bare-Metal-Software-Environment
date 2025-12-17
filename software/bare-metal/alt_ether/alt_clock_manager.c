@@ -5337,4 +5337,215 @@ ALT_STATUS_CODE alt_clk_clkmgr_uninit(void)
     ALT_STATUS_CODE ret = ALT_E_SUCCESS;
 
     return ret;
-} 
+}
+
+void clkMgrTest(void){
+
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    alt_freq_t freq;
+
+    ALT_CLK_t clk = ALT_CLK_EMAC1;
+    clk = ALT_CLK_MAIN_PLL;
+    ALT_CLK_SAFE_DOMAIN_t clk_domain;
+    clk_domain = ALT_CLK_DOMAIN_NORMAL;
+
+    if(alt_clk_is_in_safe_mode(clk_domain)) {
+        dprintf("Clock manager is in safe mode, PLL settings are not effective\r\n");
+    } else{
+        dprintf("Clock manager is not in safe mode, PLL settings are effective\r\n");
+    }
+
+    status=alt_clk_pll_is_bypassed(clk);
+    if(status == ALT_E_TRUE) {
+        dprintf("Main PLL bypassed, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("Main PLL not bypassed, %" PRIi32 ".\n", status);
+
+    }
+
+    clk = ALT_CLK_PERIPHERAL_PLL;
+    status=alt_clk_pll_is_bypassed(clk);
+    if(status == ALT_E_TRUE) {
+        dprintf("Periph PLL bypassed, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("Periph PLL not bypassed, %" PRIi32 ".\n", status);
+
+    }
+
+    clk = ALT_CLK_SDRAM_PLL;
+    status=alt_clk_pll_is_bypassed(clk);
+    if(status == ALT_E_TRUE) {
+        dprintf("SDRAM PLL bypassed, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SDRAM PLL not bypassed, %" PRIi32 ".\n", status);
+
+    }
+
+    clk = ALT_CLK_EMAC1;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: EMAC1 frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("EMAC1 clk not enabled, enable now %" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("EMAC1 clk is enabled, %" PRIi32 ".\n", freq);
+    }
+    clk = ALT_CLK_EMAC0;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: EMAC0 frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("EMAC0 clk not enabled, enable now %" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("EMAC0 clk is enabled, %" PRIi32 ".\n", freq);
+    }
+
+
+
+
+    clk = ALT_CLK_L4_MP;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: L4_MP frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("L4_MP clk not enabled, enable now%" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("L4_MP clk is enabled, %" PRIi32 ".\n", freq);
+    }
+
+    clk = ALT_CLK_L4_SP;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: L4_SP frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("L4_SP clk not enabled, enable now%" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("L4_SP clk is enabled, %" PRIi32 ".\n", freq);
+    }
+
+
+
+    clk = ALT_CLK_SDMMC;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: ALT_CLK_SDMMC frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("ALT_CLK_SDMMC clk not enabled, enable now%" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("ALT_CLK_SDMMC clk is enabled, %" PRIi32 ".\n", freq);
+    }
+
+    clk = ALT_CLK_H2F_USER2;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: ALT_CLK_H2F_USER2 frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("ALT_CLK_H2F_USER2 clk not enabled, enable now%" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("ALT_CLK_H2F_USER2 clk is enabled, %" PRIi32 ".\n", freq);
+    }
+
+    clk = ALT_CLK_H2F_USER1;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: ALT_CLK_H2F_USER1 frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("ALT_CLK_H2F_USER1 clk not enabled, enable now%" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("ALT_CLK_H2F_USER1 clk is enabled, %" PRIi32 ".\n", freq);
+    }
+
+    clk = ALT_CLK_H2F_USER0;
+    status=alt_clk_freq_get(clk,&freq);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get frequency, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: ALT_CLK_H2F_USER0 frequency is, %" PRIi32 ".\n", freq);
+    }
+
+    status = alt_clk_is_enabled(clk);
+    if (status != ALT_E_TRUE) {
+        dprintf("ALT_CLK_H2F_USER0 clk not enabled, enable now%" PRIi32 ".\n", status);
+        alt_clk_clock_enable(clk);
+    } else {
+        dprintf("ALT_CLK_H2F_USER0 clk is enabled, %" PRIi32 ".\n", freq);
+    }
+    uint32_t mult, div, subdiv, temp;
+    clk = ALT_CLK_PERIPHERAL_PLL;
+
+    status = alt_clk_pll_vco_cfg_get(clk,&mult,&div);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get M and N, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: M and N  is respectively, %" PRIi32 ", %" PRIi32 ".\n", mult,div);
+    }
+    
+    clk = ALT_CLK_EMAC1;
+    status = alt_clk_divider_get(clk,&subdiv);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get divider value, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: divider for the clock is, %" PRIi32 ".\n", subdiv);
+    }
+    temp = 8;
+    status = alt_clk_divider_set(clk,subdiv);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't set divider value, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: divider for the clock is set, %" PRIi32 ".\n", temp);
+    }
+
+    status = alt_clk_divider_get(clk,&subdiv);
+    if (status != ALT_E_SUCCESS) {
+        dprintf("ERROR: can't get divider value, %" PRIi32 ".\n", status);
+    } else {
+        dprintf("SUCCESS: divider for the clock is, %" PRIi32 ".\n", subdiv);
+    }
+
+
+    return;
+    
+}
+

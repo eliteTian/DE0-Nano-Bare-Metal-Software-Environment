@@ -43,7 +43,6 @@
 #include "socal/socal.h"
 #include "socal/alt_rstmgr.h"
 #include "socal/alt_sdr.h"
-
 #include <stdio.h>
 
 #if ALT_BRIDGE_PROVISION_F2S_SUPPORT
@@ -51,6 +50,7 @@
 #include "alt_cache.h"
 
 extern void alt_bridge_init_f2s_helper(void);
+
 
 static ALT_STATUS_CODE alt_bridge_init_f2s(alt_bridge_fpga_is_ready_t fpga_is_ready,
                                            void * user_arg)
@@ -303,3 +303,55 @@ ALT_STATUS_CODE alt_bridge_uninit(ALT_BRIDGE_t bridge,
 
     return ALT_E_SUCCESS;
 }
+
+static unsigned int socfpga_bridge_io(void) {
+    const uint32_t ALT_LWFPGA_BASE         = 0xFF200000;
+    const uint32_t ALT_LWFPGA_SYSID_OFFSET = 0x00010000;
+   // const uint32_t ALT_LWFPGA_LED_OFFSET   = 0x00010040;
+
+    /* Attempt to read the system ID peripheral */
+    unsigned int sysid = alt_read_word(ALT_LWFPGA_BASE + ALT_LWFPGA_SYSID_OFFSET);
+
+    //null_printf("INFO: LWFPGA Slave => System ID Peripheral value = 0x%08u.\n", sysid);
+    return sysid;
+
+}
+
+ALT_STATUS_CODE bridgeTest(void){
+
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+
+    ALT_BRIDGE_t bridge = ALT_BRIDGE_LWH2F;
+    status = alt_bridge_init(bridge, NULL, NULL);
+
+    /*if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT LWH2F failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT LWH2F SUCCESSFUL, %" PRIi32 ".\n", status);
+    }*/
+
+    bridge = ALT_BRIDGE_F2H;
+    status = alt_bridge_init(bridge, NULL, NULL);
+
+    /*if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT F2H failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT F2H SUCCESSFUL, %" PRIi32 ".\n", status);
+    }*/
+
+    bridge = ALT_BRIDGE_H2F;
+    status = alt_bridge_init(bridge, NULL, NULL);
+
+    /*if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: ALT_BRIDGE_INIT H2F failed, %" PRIi32 ".\n", status);
+    } else {
+        ALT_PRINTF("SUCCESS: ALT_BRIDGE_INIT H2F SUCCESSFUL, %" PRIi32 ".\n", status);
+    }*/
+
+    socfpga_bridge_io();
+
+    return status;
+}
+
+

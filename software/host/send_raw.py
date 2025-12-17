@@ -1,6 +1,23 @@
 from scapy.all import sendp, Ether
 
-payload = bytes([i & 0xff for i in range(64)])   # example payload
+
+mixed = [
+       0,   24,   20,    0,   -4,   19,   43,   39,   18,   14,
+      37,   60,   55,   34,   29,   51,   73,   67,   45,   39,
+      60,   81,   74,   51,   43,   63,   83,   75,   50,   41,
+      60,   79,   69,   43,   33,   51,   69,   58,   31,   20,
+      37,   54,   42,   15,    3,   19,   36,   24,   -4,  -16,
+       0,   16,    4,  -24,  -36,  -19,   -3,  -15,  -42,  -54,
+     -37,  -20,  -31,  -58,  -69,  -51,  -33,  -43,  -69,  -79,
+     -60,  -41,  -50,  -75,  -83,  -63,  -43,  -51,  -74,  -81,
+     -60,  -39,  -45,  -67,  -73,  -51,  -29,  -34,  -55,  -60,
+     -37,  -14,  -18,  -39,  -43,  -19,    4,    0,  -20,  -24
+
+]
+
+# Convert int8_t to bytes (0–255)
+payload = bytes([x & 0xFF for x in mixed])
+
 
 frame = Ether(
     dst="00:07:ed:42:9a:48",   # board MAC
@@ -9,3 +26,4 @@ frame = Ether(
 ) / payload
 
 sendp(frame, iface="enp6s0")  # replace interface name
+

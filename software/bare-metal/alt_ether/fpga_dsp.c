@@ -41,34 +41,6 @@ static const int8_t sine500K[100] = {
 
 static const int8_t sine10M[5] = { 0, 20, 12, -12, -20 };
 
-static const uint8_t unsigned_mixed[100] = {
-     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
-    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-    20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-    30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-    40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
-    50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
-    60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
-    70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-    80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
-    90, 91, 92, 93, 94, 95, 96, 97, 98, 99
-};
-
-
-
-static const int8_t mixed[100] = {
-     0, 24, 20, 0, -4, 0, 24, 8, 43, 15,
-    38, 62, 57, 36, 51, 74, 56, 46, 60, 82,
-    62, 83, 75, 51, 62, 82, 72, 46, 56, 34,
-    51, 68, 57, 30, 38, 55, 31, 16, 44, 0,
-    16, 32, 20, 24, 0, 16, 4, -12, -4, 0,
-   -24, -8, -19, -23, -18, -22, -32, -8, -39, -14,
-   -56, -38, -48, -75, -62, -63, -63, -75, -50, -62,
-   -60, -38, -44, -24, -51, -36, -57, -54, -38, -35,
-   -31, -8, -12, -8, -20, -8, 4, 8, 31, 55,
-    38, 32, 28, 8, 44, 24, 31, 23, 18, 22
-};
-
 
 static int8_t mixSig(uint16_t index){
     uint16_t mod10m = 0;
@@ -82,9 +54,14 @@ static int8_t mixSig(uint16_t index){
 
 }
 
-//static uint8_t mixSig(uint16_t index){
-//    return mixed[index%100];
-//}
+static int8_t extractFrame(uint16_t index, uint8_t* src){
+    int8_t val = 0;
+    uint16_t mod = 0;
+    mod = index%100;
+    val = src[14+mod];
+    return val;
+}
+
 
 
 
@@ -224,7 +201,7 @@ void dumpRamSource(void) {
     *reg_addr = reg_val;
 }
 
-void dumpRamSink(void) {
+void setSinkForDump(void) {
     uint32_t reg_val = 0;
     volatile uint32_t* reg_addr;
     reg_val |= 0x2<<SRC_CTRL_CMD_TYPE_OFST;
@@ -408,6 +385,36 @@ void ramWriteSinWav(){
 
 }
 
+void ramWriteSinWavEth(uint8_t* eth_src){
+    uint16_t  index;
+    uint8_t   rdata = 0;
+    int8_t    signed_wdata;
+    uint8_t   raw_wdata;
+    uint16_t  addr;
+
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        signed_wdata = extractFrame(index,eth_src);
+        raw_wdata = (uint8_t)signed_wdata;
+        //printf("Source RAM data written at index %d: is %d  raw is 0x%02x \r\n", index, signed_wdata, raw_wdata );
+
+        writeRamSource(addr, raw_wdata);
+    }
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index;
+        readRamSource(addr,&rdata);
+        signed_wdata = extractFrame(index,eth_src);
+        raw_wdata = (uint8_t)signed_wdata;
+        if(rdata!=raw_wdata) {
+            printf("Source RAM data mismatch: at index %d: %d vs %d \r\n", index, (int8_t)rdata, (int8_t)raw_wdata );
+        }
+    }
+
+}
+
+
+
+
 
 void ramWriteSinUnsinged(void) {
     uint16_t index;
@@ -450,7 +457,24 @@ void dspGainGet(uint32_t* data){
     *data = *reg_addr;
 }
 
+void ethSinTest(uint8_t* eth_src, uint8_t* dsp_arr) {
 
+    uint8_t rdata;
+    uint16_t index;
+    uint16_t addr;
+    ramWriteSinWavEth(eth_src);// fill up source ram with data and do a read back test  
+    dspGainSet(3);
+    dspSetCoeff(28,63,95,119,127);
+    setSinkForDump(); // set up sink ram state machine in  dump state, expecting data from st IF
+    dumpRamSource(); //start master axi st transfer.          //                   //
+    waitStatusComplete();
+    for(index = 0; index < RAM_SIZE; index++) {
+        addr = index; 
+        readRamSink(addr,&rdata);
+        *dsp_arr++=rdata;
+    }
+
+}
 
 
 
@@ -460,9 +484,7 @@ void sinTest(uint8_t* dsp_arr) {
     uint16_t index;
     uint16_t addr;
 
-    for (int i=0; i<100; i++)
-        printf("%d ", mixed[i]);
-    printf("\n");
+
 
     //ramWriteTestSrc();
     //ramWriteSinUnsinged();  //fill up source ram with unsigned data  
@@ -478,7 +500,7 @@ void sinTest(uint8_t* dsp_arr) {
     getCoeff1(&data);
     printf("After setting Coeff1 : 0x%08x\r\n", data );
 
-    dumpRamSink(); // set up sink ram state machine in  dump state, expecting data from st IF
+    setSinkForDump(); // set up sink ram state machine in  dump state, expecting data from st IF
     readCTRLSink(&data);
     printf("After arming sink for ST transfer CTRL register is : 0x%08x\r\n", data );
     readDbgSink(&data);
@@ -510,7 +532,7 @@ void dspTest(uint8_t* dsp_arr ) {
     gprTest(); //general purpose register test. simple wr and rd
     //ramReadSnk();
     ramWriteTestSrc();// fill up source ram with data and do a read back test 
-    dumpRamSink(); // set up sink ram state machine in  dump state, expecting data from st IF
+    setSinkForDump(); // set up sink ram state machine in  dump state, expecting data from st IF
     readCTRLSink(&data);
     printf("After arming sink for ST transfer CTRL register is : 0x%08x\r\n", data );
     readDbgSink(&data);
@@ -528,7 +550,7 @@ void dspTest(uint8_t* dsp_arr ) {
     getCoeff1(&data);
     printf("After setting Coeff1 : 0x%08x\r\n", data );
 
-    dumpRamSink(); // set up sink ram state machine in  dump state, expecting data from st IF
+    setSinkForDump(); // set up sink ram state machine in  dump state, expecting data from st IF
     readCTRLSink(&data);
     printf("After arming sink for ST transfer CTRL register is : 0x%08x\r\n", data );
     readDbgSink(&data);

@@ -62,7 +62,7 @@ void writeRamSink(uint16_t addr, uint8_t data);
 void readRamSink(uint16_t addr, uint8_t* rdata);
 void writeGPRSink(uint32_t data);
 void readGPRSink(uint32_t* data);
-void dumpRamSink(void);
+void setSinkForDump(void);
 void readDbgSink(uint32_t* data);
 
 void writeGPRDSP(uint32_t data);
