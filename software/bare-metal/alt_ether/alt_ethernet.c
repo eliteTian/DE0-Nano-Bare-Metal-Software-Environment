@@ -65,7 +65,8 @@
 
 uint8_t MAC_ADDR[6] = { 0x00, 0x07, 0xed, 0x42, 0x9a, 0x48};
 uint8_t SA_ADDR[6]  = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
-uint8_t frame_buffer[ETH_BUFFER_SIZE];
+uint8_t tx_frame_buffer[ETH_BUFFER_SIZE];
+uint8_t rx_frame_buffer[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf0[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf1[ETH_BUFFER_SIZE];
 //static uint8_t frame_buf2[ETH_BUFFER_SIZE];
@@ -494,6 +495,9 @@ void emacInit(alt_eth_emac_instance_t * emac) {
     alt_write_word(ALT_EMAC_GMAC_MAC_CFG_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]), alt_mac_config_reg_settings);
         /* Disable promiscuous mode */
     alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),1, 0);  
+        /* Disable broadcast frame */
+    alt_setbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),ALT_EMAC_GMAC_MAC_FRM_FLT_DBF_SET_MSK);
+
     dprintf("Initializing irq handler\n");   
     /* Initialize the ethernet irq handler */   
     alt_eth_irq_init(emac, alt_eth_irq_callback);
@@ -854,7 +858,11 @@ ALT_STATUS_CODE alt_eth_dma_mac_config(alt_eth_emac_instance_t * emac)
 
     
     /* Disable promiscuous mode */
-    alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),1, 0);  
+    alt_replbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),1, 0);
+
+    /* Disable broadcast frame */
+    alt_setbits_word(ALT_EMAC_GMAC_MAC_FRM_FLT_ADDR(Alt_Emac_Gmac_Grp_Addr[emac->instance]),ALT_EMAC_GMAC_MAC_FRM_FLT_DBF_SET_MSK);
+
        
     /* Initialize the ethernet irq handler */   
     alt_eth_irq_init(emac, alt_eth_irq_callback);
@@ -1215,7 +1223,6 @@ void alt_eth_mac_set_irq_reg(uint32_t mac_irq_mask, alt_eth_enable_disable_state
 void alt_eth_mac_set_sa_filter(uint8_t *address, uint32_t instance){
     if (instance > 1) { return; }
     uint32_t tmpreg;
-      
     /* Calculate the selected MAC address high register */
     tmpreg = ((uint32_t)address[5] << 8) | (uint32_t)address[4] | ALT_EMAC_GMAC_MAC_ADDR1_HIGH_SA_SET_MSK | ALT_EMAC_GMAC_MAC_ADDR1_HIGH_AE_SET_MSK ;
     
@@ -1229,7 +1236,6 @@ void alt_eth_mac_set_sa_filter(uint8_t *address, uint32_t instance){
                 
      /* Load the selected MAC address low register */
     alt_write_word(ALT_EMAC_GMAC_MAC_ADDR1_LOW_ADDR(Alt_Emac_Gmac_Grp_Addr[instance]), tmpreg);
-
 
 }
 

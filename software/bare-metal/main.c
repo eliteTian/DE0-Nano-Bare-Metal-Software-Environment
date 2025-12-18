@@ -24,12 +24,15 @@ extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
 extern void sinTest(uint8_t* dsp_arr);
 extern void ethSinTest(uint8_t* eth_src, uint8_t* dsp_arr);
+
 extern void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr);
 extern void dump_frame_buf(alt_eth_emac_instance_t * emac );
-
+extern void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len);
 
 extern uint8_t MAC_ADDR[6]; 
-extern uint8_t frame_buffer[ETH_BUFFER_SIZE];
+extern uint8_t rx_frame_buffer[ETH_BUFFER_SIZE];
+extern uint8_t tx_frame_buffer[ETH_BUFFER_SIZE];
+
 extern void mysleep(uint32_t cycles);
 extern void dbgReg(uint32_t addr);
 extern void swap_addr(uint8_t* arr);
@@ -50,7 +53,6 @@ void rstMgrTest(void);
 
 void ledTest(void);
 void fpgaTest(void);
-void ethDbg(void);
 void fpgaCustomTest(uint8_t* eth_src);
 
 extern ALT_STATUS_CODE bridgeTest(void);
@@ -118,19 +120,41 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     //uint32_t last_txints = emac->txints;
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
     //send packet
-    scatter_frame(test_frame, sizeof(test_frame), emac);
-    printf( "Hufei: packet sent, check on wireshark\r\n" );
+    //scatter_frame(test_frame, sizeof(test_frame), emac);
+    //printf( "Hufei: packet sent, check on wireshark\r\n" );
 
     while(1) { //poll for the moment until watchdog triggers
         if(last_rxints != emac->rxints) {
             last_rxints++;
             dma_status = alt_read_word(0xFF703014);
-            alt_eth_get_packet(frame_buffer,&rcv_len,emac);
-            swap_addr(frame_buffer);
-            printf("Call back reading dma int status is 0x%08x, received packet len is 0x%08x \n", dma_status, rcv_len );
-            fpgaCustomTest(frame_buffer);
-            scatter_frame(frame_buffer,rcv_len,emac);
+            alt_eth_get_packet(rx_frame_buffer,&rcv_len,emac);
+            
+            swap_addr(rx_frame_buffer);
+            for(int i =0;i!=14;i++) {
+                tx_frame_buffer[i] = rx_frame_buffer[i];
+            }
 
+            printf("Call back reading dma int status is 0x%08x, received packet len is 0x%08x \n", dma_status, rcv_len );
+            //fpgaCustomTest(frame_buffer);
+            ethSinLoop(rx_frame_buffer,tx_frame_buffer+14,rcv_len);
+            for(int i = 14;i!=rcv_len;i++) {
+                printf("(%d,%d)",i, (int8_t)rx_frame_buffer[i] ); //
+                if(i%10 ==9) {
+                    printf("\r\n" );
+                } else{
+                    printf(",");
+                }
+            }
+            printf("\r\n" );
+            for(int i = 14;i!=rcv_len;i++) {
+                printf("(%d,%d)",i, (int8_t)tx_frame_buffer[i] ); //
+                if(i%10 ==9) {
+                    printf("\r\n" );
+                } else{
+                    printf(",");
+                }
+            }
+            scatter_frame(tx_frame_buffer,rcv_len,emac);
             addr = 0xFF702180; 
             stat = alt_read_word( addr);
             printf("DBG: Number of good frames received is                                0x%08x,0d%08d !\n",addr,stat);
@@ -188,7 +212,7 @@ void fpgaCustomTest(uint8_t* eth_src){
     uint16_t i;
     for(i=0;i<4096;i++){
       //  printf("Dram value check: 0x%02x\r\n", dsp_arr[i] );
-        printf("(%d,%d)",i, (int8_t)dsp_arr[i] );
+        printf("(%d,%d)",i, (int8_t)dsp_arr[i] ); //
         if(i%10 ==9) {
             printf("\r\n" );
         } else{
@@ -269,67 +293,4 @@ ALT_STATUS_CODE watchDogInit(void){
     return status;
 }
 
-
-void ethDbg(void){
-    
-    //dbgReg(0xFFD04060);
-    //dbgReg(0xFFD040A0);
-
-    //dbgReg(0xFF703000);
-    //dbgReg(0xFF703004);
-    //dbgReg(0xFF703008);
-    //dbgReg(0xFF703014);
-    //dbgReg(0xFF703018);
-    //dbgReg(0xFF70301C);
-    //dbgReg(0xFF703028);
-    //dbgReg(0xFF703058);
-
-    //printf( "System manager emac group\n" );
-    //dbgReg( 0xFFD08060);
-    //dbgReg( 0xFFD08064);
-    //printf( "Clock manager perkph group\n" );
-    //for( k = 0; k< 13; k++) {
-    //    dbgReg( 0xFFD04080 + 4*k);
-    //}
-    //printf( "Clock manager makn group\n" );
-    //for( k = 0; k< 14; k++) {
-    //    dbgReg( 0xFFD04040 + 4*k);
-    //}
-    //printf( "Clock manager module group\n" );
-    //for( k = 0; k< 6; k++) {
-    //    dbgReg( 0xFFD04000 + 4*k);
-    //}
-    //printf( "RST manager module group\n" );
-    //for( k = 0; k< 8; k++) {
-    //    if(k!=3) {
-    //        dbgReg( 0xFFD05000 + 4*k);
-    //    }
-    //}
-    //printf( "Pkn Mux group\n" );
-    //for( k = 0; k< 20; k++) {
-    //    dbgReg( 0xFFD08400 + 4*k);
-    //}
-
-    //MAC_Configuration
-    dbgReg(0xFF702000);
-    //Version
-    dbgReg(0xFF702020);
-    //Debug
-    dbgReg(0xFF702024);
-    //
-    //SGMII_RGMII_SMII_Control_Status
-    dbgReg(0xFF7020d8);
-    //Busmode
-    dbgReg(0xFF703000);
-    //Status
-    dbgReg(0xFF703014);
-    //Operation_Mode
-    dbgReg(0xFF703018);
-    //AXI_Bus_Mode
-    dbgReg(0xFF703028);
-     //AXI_Bus_Mode
-    dbgReg(0xFF702164); 
-    //AXI_Bus_Mode
-    dbgReg(0xFF702168);
-}
 

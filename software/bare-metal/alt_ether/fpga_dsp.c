@@ -58,7 +58,7 @@ static int8_t extractFrame(uint16_t index, uint8_t* src){
     int8_t val = 0;
     uint16_t mod = 0;
     mod = index%100;
-    val = src[14+mod];
+    val = src[14+mod]; //excluding mac addresses, starting from index 14.
     return val;
 }
 
@@ -475,6 +475,28 @@ void ethSinTest(uint8_t* eth_src, uint8_t* dsp_arr) {
     }
 
 }
+
+void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len) {
+
+    uint8_t rdata;
+    uint16_t index;
+    uint16_t addr;
+    ramWriteSinWavEth(eth_src);// fill up source ram with data and do a read back test  
+    dspGainSet(3);
+    dspSetCoeff(28,63,95,119,127);
+    setSinkForDump(); // set up sink ram state machine in  dump state, expecting data from st IF
+    dumpRamSource(); //start master axi st transfer.          //                   //
+    waitStatusComplete();
+    for(index = 1000; index < 1000+len-14; index++) { //scoop from middle
+        addr = index; 
+        readRamSink(addr,&rdata);
+        *eth_ret++=rdata;
+    }
+
+}
+
+
+
 
 
 
