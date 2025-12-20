@@ -55,10 +55,10 @@ void fpgaTest(void){
 	led_mask = 0x01;
 	led_direction = 0; // 0: left to right direction
     //dip_sw_bits = 0;
-	while( loop_count < 2 ) {
+	while( loop_count < 20 ) {
 		printf( "Hufei:You'd be seeing shifting LEDs \n" );
 		// control led
-		*(uint32_t *)h2p_lw_led_addr = ~led_mask; 
+		*(uint32_t *)h2p_lw_led_addr = led_mask; 
 		printf( "Hufei:register stuck test \n" );
 		// wait 100ms
 		mysleep( 1000*1000 );
@@ -68,7 +68,7 @@ void fpgaTest(void){
 			led_mask <<= 1;
 			if (led_mask == (0x01 << (LED_PIO_DATA_WIDTH-1)))
 				 led_direction = 1;
-		}else{
+		} else {
 			led_mask >>= 1;
 			if (led_mask == 0x01){ 
 				led_direction = 0;
@@ -79,6 +79,20 @@ void fpgaTest(void){
 	} // while
     
 }
+
+
+void ethCtlLed(uint8_t* rx_packet ){
+    if(rx_packet==NULL){
+        return;
+    }
+    printf( "LED lit by packet decoding!\n" );
+	uint8_t led_mask;
+    uint32_t*  h2p_lw_led_addr;
+    led_mask = rx_packet[15]; //first packet
+	h2p_lw_led_addr= (uint32_t* )( ALT_LWFPGASLVS_OFST + LED_PIO_BASE  );  
+    *h2p_lw_led_addr = led_mask;
+}
+
 
 void rstMgrTest(void){
 

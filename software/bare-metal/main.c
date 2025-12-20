@@ -28,7 +28,7 @@ extern void ethSinTest(uint8_t* eth_src, uint8_t* dsp_arr);
 extern void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr);
 extern void dump_frame_buf(alt_eth_emac_instance_t * emac );
 extern void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len);
-
+extern void ethCtlLed(uint8_t* rx_packet );
 extern uint8_t MAC_ADDR[6]; 
 extern uint8_t rx_frame_buffer[ETH_BUFFER_SIZE];
 extern uint8_t tx_frame_buffer[ETH_BUFFER_SIZE];
@@ -52,7 +52,7 @@ extern void clkMgrTest(void);
 void rstMgrTest(void);
 
 void ledTest(void);
-void fpgaTest(void);
+extern void fpgaTest(void);
 void fpgaCustomTest(uint8_t* eth_src);
 
 extern ALT_STATUS_CODE bridgeTest(void);
@@ -90,7 +90,6 @@ int main(void) {
     //ethernet module test, including init
 #ifdef ETH_TEST
     eth_main(&emac1);
-    //ethDbg();
 #endif
     
 #ifdef DMA_TEST
@@ -119,16 +118,15 @@ int eth_main(alt_eth_emac_instance_t* emac) {
     uint32_t last_rxints = emac->rxints;
     //uint32_t last_txints = emac->txints;
     stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
-    //send packet
-    //scatter_frame(test_frame, sizeof(test_frame), emac);
-    //printf( "Hufei: packet sent, check on wireshark\r\n" );
 
     while(1) { //poll for the moment until watchdog triggers
+//        begin:
         if(last_rxints != emac->rxints) {
             last_rxints++;
             dma_status = alt_read_word(0xFF703014);
             alt_eth_get_packet(rx_frame_buffer,&rcv_len,emac);
-            
+            ethCtlLed(rx_frame_buffer);
+//            goto begin;
             swap_addr(rx_frame_buffer);
             for(int i =0;i!=14;i++) {
                 tx_frame_buffer[i] = rx_frame_buffer[i];
