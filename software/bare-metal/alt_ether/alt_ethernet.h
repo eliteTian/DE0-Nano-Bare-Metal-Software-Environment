@@ -394,7 +394,7 @@ typedef struct
  * Ethernet API functions.  This structure must be allocated by the application
  * program.  This structure allows using the Ethernet API with more than one
  * instance.   After the application program allocates this structure,
- * the instance variable must be set to the desired EMAC, 0,1, or 2.
+ * the instance variable must be set to the desired EMAC, 0 or 1.
  * The other variables are maintained by the Ethernet API and do not have to
  * be set by the application program.
  */
@@ -437,11 +437,22 @@ void alt_eth_delay(volatile uint32_t delay);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  */
 void alt_eth_reset_mac(uint32_t instance);
-void alt_eth_emac_hps_init(uint32_t instance);
-void alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac);
+
+/******************************************************************************/
+/*!
+ * Comprehensive initialization function for the whole emac and dma. After this,
+ * the emac peripheral is in operation mode
+ *
+ *
+ * \param       instance
+ *              The EMAC instance 0,1.
+ * \retval      ALT_E_SUCCESS   The operation was successful.
+ * \retval      ALT_E_ERROR     The operation failed.
+ */
+ALT_STATUS_CODE alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac);
 /******************************************************************************/
 /*!
  * Initalizes the RX Descriptor ring
@@ -501,7 +512,7 @@ void alt_eth_irq_callback(uint32_t icciar, void * context);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  * \retval      ALT_E_SUCCESS   The operation was successful.
  * \retval      ALT_E_ERROR     The operation failed.
@@ -514,7 +525,7 @@ ALT_STATUS_CODE  alt_eth_software_reset(uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void  alt_eth_start(uint32_t instance);
@@ -525,7 +536,7 @@ void  alt_eth_start(uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void  alt_eth_stop(uint32_t instance);
@@ -542,9 +553,18 @@ void  alt_eth_stop(uint32_t instance);
  *   4) Use the alt_eth_send_packet and alt_eth_get_packet functions
  *      to send and get packets.
  *
+ *  Data flow:
+ *  1.Initialize descriptor chains before calling this function, which includes
+ *    pointing the descriptor address to DMA current TX desc register.
+ *  2.This function first checks if there is free descriptor. OWN bit should be 0
+ *  3.It copies a fragment or a whole frame of data to a single descriptor. If flag
+ *    bit first and last is set, it sets the descriptor flag bits correspondingly.
+ *  4.DMA can always grab data from descriptor and moves it to MAC data buffer. Once
+ *    MAC sees the last flag, it will send packet on wire.
+ *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  * \retval      ALT_E_SUCCESS   The operation was successful.
  * \retval      ALT_E_ERROR     The operation failed.
@@ -599,7 +619,7 @@ ALT_STATUS_CODE alt_eth_get_packet(uint8_t * pkt, uint32_t * len, alt_eth_emac_i
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_mac_set_tx_state(alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -612,7 +632,7 @@ void alt_eth_mac_set_tx_state(alt_eth_enable_disable_state_t new_state, uint32_t
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_mac_set_rx_state(alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -627,7 +647,7 @@ void alt_eth_mac_set_rx_state(alt_eth_enable_disable_state_t new_state, uint32_t
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_mac_set_bpa_state(alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -638,7 +658,7 @@ void alt_eth_mac_set_bpa_state(alt_eth_enable_disable_state_t new_state, uint32_
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  * \retval      ALT_ETH_ENABLE    Enabled
  * \retval      ALT_ETH_DISABLE   Disabled
@@ -656,7 +676,7 @@ alt_eth_enable_disable_state_t alt_eth_mac_get_bpa_state(uint32_t instance);
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_mac_set_irq_reg(uint32_t mac_irq_mask, alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -668,7 +688,7 @@ void alt_eth_mac_set_irq_reg(uint32_t mac_irq_mask, alt_eth_enable_disable_state
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  * \retval      ALT_ETH_RESET   The link is down
  * \retval      ALT_ETH_SET     The link is up
@@ -684,7 +704,7 @@ alt_eth_set_reset_state_t alt_eth_mac_get_mii_link_state(uint32_t instance);
  * \param       mac_bit_mask
  *              mask of the gmac int status bits to check
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_ETH_RESET   No bits in the mask are set
  * \retval      ALT_ETH_SET     At least one bit in the mask is set
@@ -698,7 +718,7 @@ alt_eth_set_reset_state_t alt_eth_mac_check_status_reg(uint32_t mac_bit_mask, ui
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The gmac int status register value
  *
@@ -712,7 +732,7 @@ uint32_t alt_eth_mac_get_irq_status_reg(uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  */
 void alt_eth_mac_pause_ctrl_frame(uint32_t instance); 
@@ -726,7 +746,7 @@ void alt_eth_mac_pause_ctrl_frame(uint32_t instance);
  *              8 bit array containing the mac address to set
  *              where address[5] is the high order mac byte.  
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  */
 void alt_eth_mac_set_mac_addr(uint8_t *address, uint32_t instance);
@@ -742,7 +762,7 @@ void alt_eth_mac_set_da_filter(uint8_t *address, uint32_t instance);
  *              8 bit array to recieve the 5 byte mac address
  *              where address[5] is the high order mac byte.  
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  */
 void alt_eth_mac_get_mac_addr(uint8_t *address, uint32_t instance);
@@ -753,7 +773,7 @@ void alt_eth_mac_get_mac_addr(uint8_t *address, uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  */
 void alt_eth_mac_check_mii_link_status(uint32_t instance);
@@ -764,7 +784,7 @@ void alt_eth_mac_check_mii_link_status(uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The value of the dma irq stat register
  *
@@ -779,7 +799,7 @@ uint32_t alt_eth_dma_get_status_reg(uint32_t instance);
  * \param       dma_bit_mask
  *              mask of the dma status bits to check
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_ETH_RESET   No bits in the mask are set
  * \retval      ALT_ETH_SET     At least one bit in the mask is set
@@ -795,7 +815,7 @@ alt_eth_set_reset_state_t alt_eth_dma_check_status_reg(uint32_t dma_bit_mask, ui
  * \param       dma_bit_mask
  *              mask of the dma int status bits to clear
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_ETH_RESET   No bits in the mask are set
  * \retval      ALT_ETH_SET     At least one bit in the mask is set
@@ -809,7 +829,7 @@ void alt_eth_dma_clear_status_bits(uint32_t dma_bit_mask, uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  *
  */
@@ -821,7 +841,7 @@ void alt_eth_dma_flush_tx_fifo(uint32_t instance);
  *
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_ETH_RESET   Tx fifo flush is complete
  * \retval      ALT_ETH_SET     Tx fifo flush is in progress
@@ -836,7 +856,7 @@ alt_eth_set_reset_state_t alt_eth_dma_get_tx_fifo_flush_state(uint32_t instance)
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_dma_set_tx_state(alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -849,7 +869,7 @@ void alt_eth_dma_set_tx_state(alt_eth_enable_disable_state_t new_state, uint32_t
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_dma_set_rx_state(alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -864,7 +884,7 @@ void alt_eth_dma_set_rx_state(alt_eth_enable_disable_state_t new_state, uint32_t
  * \param       new_state
  *              ALT_ETH_ENABLE or ALT_ETH_DISABLE
  * \param       instance
- *              The EMAC instance 0,1, or 2.
+ *              The EMAC instance 0 or 1.
  *
  */
 void alt_eth_dma_set_irq_reg(uint32_t dma_irq_mask, alt_eth_enable_disable_state_t new_state, uint32_t instance);
@@ -876,7 +896,7 @@ void alt_eth_dma_set_irq_reg(uint32_t dma_irq_mask, alt_eth_enable_disable_state
  * \param       dma_overflow_mask
  *              The mask of the desired bits to check.
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_ETH_RESET   No bits specified by the mask are set
  * \retval      ALT_ETH_SET     At least 1 bit specified by the mask is set
@@ -888,7 +908,7 @@ alt_eth_set_reset_state_t alt_eth_dma_check_overflow_counter_reg(uint32_t dma_ov
  * Get the address of the current Transmit Descriptor being read by the DMA
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The tx address 
  */
@@ -899,7 +919,7 @@ uint32_t alt_eth_dma_get_curr_tx_desc_addr(uint32_t instance);
  * Get the address of the current Receive Descriptor being read by the DMA
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The rx address 
  */
@@ -910,7 +930,7 @@ uint32_t alt_eth_dma_get_curr_rx_desc_addr(uint32_t instance);
  * Get the address of the current Transmit buffer address being read by the DMA
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The tx buf address 
  */
@@ -921,7 +941,7 @@ uint32_t alt_eth_dma_get_curr_tx_buff_addr(uint32_t instance);
  * Get the address of the current Receive buffer address being read by the DMA
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The rx buf address 
  */
@@ -932,7 +952,7 @@ uint32_t alt_eth_dma_get_curr_rx_buff_addr(uint32_t instance);
  * Set the start address of the Transmit Descriptor list
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The tx list address 
  */
@@ -943,7 +963,7 @@ void alt_eth_dma_set_tx_desc_addr(uint32_t tx_desc_list_addr, uint32_t instance)
  * Set the start address of the Receive Descriptor list
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      uint32_t        The rx list address 
  */
@@ -954,7 +974,7 @@ void alt_eth_dma_set_rx_desc_addr(uint32_t rx_desc_list_addr, uint32_t instance)
  * Resume TX DMA operations suspended by underflow or no available descriptor
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  */
 void alt_eth_dma_resume_dma_tx(uint32_t instance);
@@ -964,7 +984,7 @@ void alt_eth_dma_resume_dma_tx(uint32_t instance);
  * Resume RX DMA operations suspended by no available descriptor
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  */
 void alt_eth_dma_resume_dma_rx(uint32_t instance);
@@ -986,7 +1006,7 @@ void alt_eth_dma_resume_dma_rx(uint32_t instance);
  * The phy instance is derived from the emac instance via a lookup table in the phy .h file.
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_E_SUCCESS   Phy configuration was successful.
  * \retval      ALT_E_ERROR     Phy configuration failed.
@@ -1006,7 +1026,7 @@ ALT_STATUS_CODE alt_eth_phy_dump_all(uint32_t instance);
  * The phy instance is derived from the emac instance via a lookup table in the phy .h file.
  *
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_E_SUCCESS   Phy reset successful.
  * \retval      ALT_E_ERROR     Phy reset failed.
@@ -1031,7 +1051,7 @@ ALT_STATUS_CODE alt_eth_phy_reset(uint32_t instance);
  * \param       phy_speed
  *              returns 10, 100, or 1000
  * \param       instance
- *              The EMAC instance 0,1, or 2. 
+ *              The EMAC instance 0 or 1. 
  *
  * \retval      ALT_E_SUCCESS   Phy duplex and speed obtained successfully
  * \retval      ALT_E_ERROR     Phy duplex and speed query failed
@@ -1039,11 +1059,48 @@ ALT_STATUS_CODE alt_eth_phy_reset(uint32_t instance);
 ALT_STATUS_CODE alt_eth_phy_get_duplex_and_speed(uint32_t * phy_duplex_status, uint32_t * phy_speed, uint32_t instance);
 
 
-void systemConfig(uint32_t instance);
-
-void emacHPSIFInit(uint32_t instance);
-void dmaInit(alt_eth_emac_instance_t * emac);
-void emacInit(alt_eth_emac_instance_t * emac);
+/******************************************************************************/
+/*!
+ * This function does the initialization on the system manager for emac by selecting
+ * PHY interface as RGMII.
+ * \param       instance
+ *              The EMAC instance 0 or 1. 
+ *
+ * \retval      ALT_E_SUCCESS   Phy duplex and speed obtained successfully
+ * \retval      ALT_E_ERROR     Phy duplex and speed query failed
+ */
+ALT_STATUS_CODE systemConfig(uint32_t instance);
+/******************************************************************************/
+/*!
+ * This function initializes the emac interface by deasserting rst
+ * in RST manager and brings up and configures the PHY,
+ * \param       instance
+ *              The EMAC instance 0 or 1. 
+ *
+ * \retval      ALT_E_SUCCESS   Phy duplex and speed obtained successfully
+ * \retval      ALT_E_ERROR     Phy duplex and speed query failed
+ */
+ALT_STATUS_CODE emacHPSIFInit(uint32_t instance);
+/******************************************************************************/
+/*!
+ * This function initializes the emac's DMA
+ * \param       instance
+ *              The EMAC instance 0 or 1. 
+ *
+ * \retval      ALT_E_SUCCESS   Phy duplex and speed obtained successfully
+ * \retval      ALT_E_ERROR     Phy duplex and speed query failed
+ */
+ALT_STATUS_CODE dmaInit(alt_eth_emac_instance_t * emac);
+/******************************************************************************/
+/*!
+ * This function initializes the emac's gmac
+ * \param       instance
+ *              The EMAC instance 0 or 1. 
+ *
+ * \retval      ALT_E_SUCCESS   Phy duplex and speed obtained successfully
+ * \retval      ALT_E_ERROR     Phy duplex and speed query failed
+ */
+ALT_STATUS_CODE emacInit(alt_eth_emac_instance_t * emac);
 
 ALT_STATUS_CODE scatter_frame(uint8_t * pkt, uint32_t len,  alt_eth_emac_instance_t * emac);
     

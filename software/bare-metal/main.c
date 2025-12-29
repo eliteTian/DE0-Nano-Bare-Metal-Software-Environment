@@ -17,8 +17,9 @@
 #include "alt_cache.h"
 
 
-#define ETH_TEST
+//#define ETH_TEST
 //#define DMA_TEST
+#define PERIPH_TEST
 #define FRAM_BUF_SIZE 384
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
@@ -35,7 +36,8 @@ extern uint8_t tx_frame_buffer[ETH_BUFFER_SIZE];
 
 extern void mysleep(uint32_t cycles);
 extern void dbgReg(uint32_t addr);
-extern void swap_addr(uint8_t* arr);
+extern void swap_addr(uint8_t* arr, size_t len);
+extern void adxl345(void);
 
 #ifdef ETH_TEST
 static alt_eth_emac_instance_t emac1  __attribute__((section(".bss.oc_ram"), aligned(32))); //create emac buffer in FPGA OCRAM
@@ -84,8 +86,10 @@ int main(void) {
     //fpgaCustomTest();      
     //rstMgrTest();
     //fpgaTest();
+#ifdef PERIPH_TEST
     //ledTest();
-
+    adxl345();
+#endif
      
     //ethernet module test, including init
 #ifdef ETH_TEST
@@ -127,7 +131,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
             alt_eth_get_packet(rx_frame_buffer,&rcv_len,emac);
             ethCtlLed(rx_frame_buffer);
 //            goto begin;
-            swap_addr(rx_frame_buffer);
+            swap_addr(rx_frame_buffer, sizeof(rx_frame_buffer));
             for(int i =0;i!=14;i++) {
                 tx_frame_buffer[i] = rx_frame_buffer[i];
             }

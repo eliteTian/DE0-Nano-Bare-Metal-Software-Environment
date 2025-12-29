@@ -142,8 +142,8 @@ void ledTest(void){
 	alt_setbits_word( ALT_GPIO1_SWPORTA_DDR_ADDR , USER_IO_DIR );
     //dbgReg((uint32_t)ALT_GPIO1_SWPORTA_DDR_ADDR);
 
-    printf("LED should blink 50 times!\r\n");
-	for(i=0;i<50;i++)
+    printf("LED should blink 17 times!\r\n");
+	for(i=0;i<17;i++)
 	{
         ALT_PRINTF("LED blinked %d times!\r\n",i);
         //ALT_PRINTF("ERROR: alt_int_global_init() failed, %" PRIi32 ".\n", status);
@@ -155,6 +155,8 @@ void ledTest(void){
 	}
 
 }
+
+
 
 
 

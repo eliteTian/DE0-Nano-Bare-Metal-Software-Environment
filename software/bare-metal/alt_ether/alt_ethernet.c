@@ -53,29 +53,22 @@
 #else
     #define dprintf null_printf
 #endif
-
-
-//void alt_dbg_reg(void* addr) {
-//    uint32_t val;
-//    val = alt_read_word(addr);
-//    printf("Addr @ 0x%08x value is 0x%08x.\r\n", (unsigned int)(addr), (unsigned int)(val));
-//}
-
-//uint8_t MAC_ADDR[6] = { 0x82,0xa3,0xf5,0x17,0x9e,0xc1};
-
+//Fixed mac addr local.
 uint8_t MAC_ADDR[6] = { 0x00, 0x07, 0xed, 0x42, 0x9a, 0x48};
+//Source addr.
 uint8_t SA_ADDR[6]  = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 uint8_t tx_frame_buffer[ETH_BUFFER_SIZE];
 uint8_t rx_frame_buffer[ETH_BUFFER_SIZE];
-//static uint8_t frame_buf0[ETH_BUFFER_SIZE];
-//static uint8_t frame_buf1[ETH_BUFFER_SIZE];
-//static uint8_t frame_buf2[ETH_BUFFER_SIZE];
-//static uint8_t frame_buf3[ETH_BUFFER_SIZE];
 
-void swap_addr(uint8_t* arr) {
+void swap_addr(uint8_t* arr, size_t len) {
+    if (arr == NULL) {
+        return;
+    }
+    if (len < 12 ) {
+        return;
+    }
     uint8_t temp;
-    int i = 0;
-    for(i=0;i<6;i++) {
+    for(size_t i=0;i<6;i++) {
         temp = arr[i];
         arr[i] = arr[i+6];
         arr[i+6]=temp;
@@ -88,79 +81,72 @@ void alt_dbg_reg(const char *name, void *addr) {
     uint32_t val = alt_read_word(addr);
     printf("Addr @ %s (0x%p) value = 0x%08x\r\n", name, addr, (unsigned int)val);
 }
-//static volatile uint8_t dumm_arr[786463];
+
+
+//void dump_ddr(void *addr, size_t len)
+//{
+//    uint32_t *p = (uint32_t *)addr;
+//    uint32_t *pa;
+//    uint32_t i;
+//    for (i = 0; i < len; i++) {
+//            pa = p;
+//            printf("DUMP RAW DDR[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+//    }
+//
+//}
 
 void dump_ddr(void *addr, size_t len)
 {
+    if (addr == NULL) {
+        return;
+    }
+    if ( len < sizeof(uint32_t) ) {
+        return;
+    }
     uint32_t *p = (uint32_t *)addr;
-    uint32_t *pa;
-    uint32_t i;
-    for (i = 0; i < len; i++) {
+    uint32_t *pa = NULL;
+    for (size_t i = 0; i < len; i++) {
             pa = p;
-            printf("DUMP RAW DDR[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+            printf("DUMP RAW DDR[%zu]: pa=0x%p, data=0x%08x\n", i, (void*)pa, *p++);
     }
 
 }
 
+//void dump_frame_buf(alt_eth_emac_instance_t * emac){
+//    uint32_t i;
+//    uint32_t *p = (uint32_t *)emac;
+//    uint32_t n = sizeof(*emac) / sizeof(uint32_t);
+//    uint32_t pa;
+//    for (i = 0; i < n; i++) {
+//        pa = (uint32_t)p;
+//        printf("POST_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+//    } 
+//
+//}
+
 void dump_frame_buf(alt_eth_emac_instance_t * emac){
-    uint32_t i;
+    if(emac->instance > 1) {
+        return;
+    }
     uint32_t *p = (uint32_t *)emac;
     uint32_t n = sizeof(*emac) / sizeof(uint32_t);
     uint32_t pa;
-    for (i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         pa = (uint32_t)p;
-        printf("POST_DBG[%u]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
+        printf("POST_DBG[%zu]: pa=0x%08x, data=0x%08x\n", i, pa, *p++);
     } 
 
-    //for(i=0;i<NUMBER_OF_RX_DESCRIPTORS;i++) {
-    //    for(j=0;j<ETH_BUFFER_SIZE;j++) {
-    //        if(i==0) {
-    //            printf("DUMP RAW data, data=0x%08x\n", frame_buf0[j]);
-    //        }
-    //        if(i==1) {
-    //            printf("DUMP RAW data, data=0x%08x\n", frame_buf1[j]);
-    //        }
-    //        if(i==2) {
-    //            printf("DUMP RAW data, data=0x%08x\n", frame_buf2[j]);
-    //        }
-    //        if(i==3) {
-    //            printf("DUMP RAW data, data=0x%08x\n", frame_buf3[j]);
-    //        }
-    //    }
-    //}
 }
 
 void discard_buff(alt_eth_emac_instance_t * emac) {
     //simply clear RX descriptor
+    if(emac->instance > 1) {
+        return;
+    }
     alt_eth_dma_desc_t * desc = &emac->rx_desc_ring[0];
-    uint32_t i;
-    //uint32_t j;    
-    //uint8_t* buf_ptr;
-    for(i=0;i<NUMBER_OF_RX_DESCRIPTORS;i++) {
+    for(size_t i=0;i<NUMBER_OF_RX_DESCRIPTORS;i++) {
         desc->status = ETH_DMARXDESC_OWN;
         desc = (alt_eth_dma_desc_t *) desc-> buffer2_next_desc_addr;
-        //buf_ptr = (uint8_t*)desc-> buffer1_addr;
-        ////store whatever is in rx buf after interrupt gets hit.
-        //for(j=0;j<ETH_BUFFER_SIZE;j++) {
-        //    //printf("DUMP RAW DESC[%u]: byte_num=%u, data=0x%02x", i, j, *(buf_ptr+j));
-        //    //if(!(j%4)) { 
-        //    //    printf("\n");
-        //    //}
-        //    if(i==0) {
-        //        *(frame_buf0+j) = *(buf_ptr+j);
-        //    }
-        //    if(i==1) {
-        //        *(frame_buf1+j) = *(buf_ptr+j);
-        //    }
-        //    if(i==2) {
-        //        *(frame_buf2+j) = *(buf_ptr+j);
-        //    }
-        //    if(i==3) {
-        //        *(frame_buf3+j) = *(buf_ptr+j);
-        //    }
-
-        //}
-
     }
 }
 
@@ -248,20 +234,40 @@ void alt_eth_reset_mac(uint32_t instance)
       
 }   
 
-void alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac){
+ALT_STATUS_CODE alt_eth_emac_dma_init(alt_eth_emac_instance_t * emac){
+    if (emac->instance > 1) { 
+        return ALT_E_ERROR;
+    }
+    ALT_STATUS_CODE status;
+    status = systemConfig(emac->instance); 
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: System Interface init failed, %" PRIi32 ".\n", status);
+    }
+    status = emacHPSIFInit(emac->instance);
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: HPS interface init failed, %" PRIi32 ".\n", status);
+    }
 
-    if (emac->instance > 1) { return; }
-
-    systemConfig(emac->instance); 
-    emacHPSIFInit(emac->instance);
-    dmaInit(emac);
-    emacInit(emac);
-    printf( "Hufei: emac and dma all initialized\r\n" );
+    status = dmaInit(emac);
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: DMA init failed, %" PRIi32 ".\n", status);
+    }
+    
+    status = emacInit(emac);
+    if (status != ALT_E_SUCCESS) {
+        ALT_PRINTF("ERROR: GMAC init failed, %" PRIi32 ".\n", status);
+    }
+    
+    return status;
 
 }
 
-void systemConfig(uint32_t instance) {
-    if (instance > 1) { return; }
+ALT_STATUS_CODE systemConfig(uint32_t instance) {
+    if (instance > 1) { 
+        return ALT_E_ERROR; 
+    }
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
 #ifdef REG_DBG
     uint32_t dbg_addr, dbg_data;
     dbg_addr = (uint32_t) ALT_SYSMGR_EMAC_CTL_ADDR;
@@ -275,10 +281,15 @@ void systemConfig(uint32_t instance) {
 #else
     alt_replbits_word(ALT_SYSMGR_EMAC_CTL_ADDR, Alt_Sysmgr_Emac_Ctl_Phy_Sel_Set_Msk[instance],  ALT_SYSMGR_EMAC_CTL_PHYSEL_1_SET(ALT_SYSMGR_EMAC_CTL_PHYSEL_1_E_RGMII)); 
 #endif
+    return status;
+
 }
 
-void emacHPSIFInit(uint32_t instance){
-    if (instance > 1) { return; }
+ALT_STATUS_CODE emacHPSIFInit(uint32_t instance){
+    if (instance > 1) { 
+        return ALT_E_ERROR; 
+    }
+
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
 #ifdef REG_DBG
     uint32_t dbg_addr, dbg_data;
@@ -331,7 +342,7 @@ void emacHPSIFInit(uint32_t instance){
     status = alt_eth_phy_reset(instance);
     if (status != ALT_E_SUCCESS) { 
         dprintf( "ERROR: PHY reset unsuccessful\r\n" );
-        return ;
+        return status;
     } else {
         dprintf( "Hufei: PHY reset successful\r\n" );
     }
@@ -341,19 +352,21 @@ void emacHPSIFInit(uint32_t instance){
     status = alt_eth_phy_1g_config(instance);
     if (status != ALT_E_SUCCESS) { 
         dprintf( "ERROR: Hufei: PHY config unsuccessful\r\n" );
-        return ;
+        return status ;
     } else {
         dprintf( "Hufei: PHY config Done\r\n" );
     }
 
-    
+    return status;
 }
 
 
 
 
-void dmaInit(alt_eth_emac_instance_t * emac) {
-    if (emac->instance > 1) { return; }
+ALT_STATUS_CODE dmaInit(alt_eth_emac_instance_t * emac) {
+    if (emac->instance > 1) { 
+        return ALT_E_ERROR;
+    }
     uint32_t interrupt_mask;
     uint32_t dbg_addr, dbg_data;
     
@@ -365,12 +378,12 @@ void dmaInit(alt_eth_emac_instance_t * emac) {
     // which is only cleared after the reset operation is completed).
     if (status != ALT_E_SUCCESS) { 
         dprintf( "ERROR: Ethenet soft reset not successful\r\n" );
-        return;
+        return status;
     }  
     //3.Poll the bits of Register 11 (AHB or AXI Status) to confirm that all previously initiated (before
     //software reset) or ongoing transactions are complete      
     if (alt_read_word(ALT_EMAC_DMA_AHB_OR_AXI_STAT_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance])) != 0) {
-        return;
+        return ALT_E_ERROR;
     }
     //4.Program the following fields to initialize the Bus Mode Register by setting values in DMA Register 0
     // Set the DMA Bus Mode Register
@@ -433,14 +446,17 @@ void dmaInit(alt_eth_emac_instance_t * emac) {
      alt_eth_dma_set_irq_reg(interrupt_mask, ALT_ETH_ENABLE, emac->instance);      
      /* confirm that all previous transactions are complete */    
      if (alt_read_word(ALT_EMAC_DMA_AHB_OR_AXI_STAT_ADDR(Alt_Emac_Dma_Grp_Addr[emac->instance])) != 0){
-        return;
+        return ALT_E_ERROR;
      }
+    return status;
 
 }
 
 
-void emacInit(alt_eth_emac_instance_t * emac) {
-    if (emac->instance > 1) { return; }
+ALT_STATUS_CODE emacInit(alt_eth_emac_instance_t * emac) {
+    if (emac->instance > 1) { 
+        return ALT_E_ERROR; 
+    }
     uint32_t alt_mac_config_reg_settings = 0;
     uint32_t phy_duplex_status, phy_speed;
     uint32_t stat;
@@ -457,10 +473,11 @@ void emacInit(alt_eth_emac_instance_t * emac) {
     
     /* Configure the MAC with the Duplex Mode fixed by the auto-negotiation process */
     status = alt_eth_phy_get_duplex_and_speed(&phy_duplex_status, &phy_speed, emac->instance);
-    if (status != ALT_E_SUCCESS) { return ; }
+    if (status != ALT_E_SUCCESS){ 
+        return status ;
+    }
     
-    if (phy_duplex_status != ALT_ETH_RESET)
-    {
+    if (phy_duplex_status != ALT_ETH_RESET) {
         /* Set Ethernet duplex mode to Full-duplex following the auto-negotiation */
         alt_mac_config_reg_settings |= ALT_EMAC_GMAC_MAC_CFG_DM_SET_MSK;  
     }
@@ -504,6 +521,7 @@ void emacInit(alt_eth_emac_instance_t * emac) {
     printf("Initializing irq handler done\n");   
     /*start DMA for operation*/
     alt_eth_start(emac->instance);
+    return status;
 }
 
 
@@ -1576,7 +1594,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
 {
     
     alt_eth_dma_desc_t *tx_desc;
-    dprintf("DBG: emac addr=%p\n",emac);
+
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
     
     //uint32_t * txbuf;
@@ -1598,6 +1616,7 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     dprintf("DBG: pointer checked! check addresses \r\n");
     //alt_eth_delay(128); //adding this delay between tx_desc and if(tx_desc->status) can resolve hang issue.
     /* Check if it is a free descriptor.  */
+    //If own bit is 0, it is a free desc.
     if (tx_desc->status & ETH_DMATXDESC_OWN) 
     {
         /* Buffer is still owned by device.  */
@@ -1651,7 +1670,8 @@ ALT_STATUS_CODE alt_eth_send_packet(uint8_t * pkt, uint32_t len, uint32_t first,
     
     /* set the Descriptor's LS and IC bit.  */
     if (last)  { tx_desc->status |=  ( ETH_DMATXDESC_LS | ETH_DMATXDESC_IC); }
-#else    
+#else 
+
     tx_desc->control_buffer_size |=   ETH_DMATXDESC_TCH;     
     
     /* Set the Descriptor's FS bit.  */
