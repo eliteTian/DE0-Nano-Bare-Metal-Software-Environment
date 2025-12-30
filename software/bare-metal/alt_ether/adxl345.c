@@ -18,6 +18,10 @@
 #define TIMEOUT_VAL 1000000
 #define ADXL345ADDR 0x53
 #define DEVID       0x00
+#define THRESH_TAP  0x1D
+#define OFSX        0x1E
+#define OFSY        0x1F
+#define OFSZ        0x20
 
 typedef int8_t RET_VAL ;
 #define TIMEOUT -2
@@ -97,22 +101,37 @@ void checkStatus(uint32_t* val) {
     printf("Status value is 0x%08x.\r\n",*val);
 }
 
-void pushWrCmd(uint8_t data) {
+static inline void pushWrCmd(uint8_t data) {
     uint32_t cmd_val = 0;
     cmd_val |=  ALT_I2C_DATA_CMD_DAT_SET(data);
     cmd_val |=  ALT_I2C_DATA_CMD_CMD_SET(ALT_I2C_DATA_CMD_CMD_E_WR);
     alt_write_word(ALT_I2C0_IC_DATA_CMD_ADDR,cmd_val);
 }
 
-void pushRdCmd(void) {
+static inline void pushRdCmd(void) {
     uint32_t cmd_val = 0;
     cmd_val |=  ALT_I2C_DATA_CMD_CMD_SET(ALT_I2C_DATA_CMD_CMD_E_RD);
     alt_write_word(ALT_I2C0_IC_DATA_CMD_ADDR,cmd_val);
 }
 
+static inline void pushRdCmdStop(void) {
+    uint32_t cmd_val = 0;
+    cmd_val |=  ALT_I2C_DATA_CMD_CMD_SET(ALT_I2C_DATA_CMD_CMD_E_RD);
+    cmd_val |=   ALT_I2C_DATA_CMD_STOP_SET(ALT_I2C_DATA_CMD_STOP_E_STOP);    
+    alt_write_word(ALT_I2C0_IC_DATA_CMD_ADDR,cmd_val);
+}
 
 
-void rdResult(uint8_t* data) {
+static inline void pushWrCmdStop(uint8_t data) { 
+    uint32_t cmd_val = 0;
+    cmd_val |=  ALT_I2C_DATA_CMD_DAT_SET(data);
+    cmd_val |=  ALT_I2C_DATA_CMD_CMD_SET(ALT_I2C_DATA_CMD_CMD_E_WR);
+    cmd_val |=   ALT_I2C_DATA_CMD_STOP_SET(ALT_I2C_DATA_CMD_STOP_E_STOP);
+    alt_write_word(ALT_I2C0_IC_DATA_CMD_ADDR,cmd_val);
+}
+
+
+static inline void rdResult(uint8_t* data) {
     *data = ALT_I2C_DATA_CMD_DAT_GET(alt_read_word(ALT_I2C0_IC_DATA_CMD_ADDR));
 }
 
@@ -120,7 +139,7 @@ RET_VAL readADXL345Reg(uint8_t addr, uint8_t* data) {
     uint32_t status;
     uint32_t cnt = TIMEOUT_VAL;
     pushWrCmd(addr);
-    pushRdCmd();
+    pushRdCmdStop();
     checkStatus(&status);
     while(!ALT_I2C_STAT_RFNE_GET(status) && cnt!=0) {
         checkStatus(&status);
@@ -128,11 +147,21 @@ RET_VAL readADXL345Reg(uint8_t addr, uint8_t* data) {
     }
     if(cnt!=0 ) {
         rdResult(data);
+        printf("Addr 0x%02x read val is 0x%02x.\r\n",addr,*data);
         return SUCCESS;
     } else {
         return TIMEOUT;
     }
 }
+
+RET_VAL writeADXL345Reg(uint8_t addr, uint8_t data) {
+    uint32_t status;
+    pushWrCmd(addr);
+    pushWrCmdStop(data);
+    checkStatus(&status);
+    return SUCCESS;
+}
+
 
 void adxl345(void) {
     uint8_t val = 0;
@@ -143,6 +172,14 @@ void adxl345(void) {
     i2c0MasterInit();
     checkStatus(&status);
     readADXL345Reg(DEVID,&val);
-    printf("DEVID is 0x%02x.\r\n",val);
+    
+    readADXL345Reg(THRESH_TAP,&val);
+    writeADXL345Reg(THRESH_TAP,0x33);
+    readADXL345Reg(THRESH_TAP,&val);
+    
+    readADXL345Reg(OFSX,&val);
+    readADXL345Reg(OFSY,&val);
+    readADXL345Reg(OFSZ,&val);
+    
     checkStatus(&status);
 }
