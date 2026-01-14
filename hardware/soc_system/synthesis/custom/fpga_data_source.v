@@ -1,22 +1,91 @@
-module fpga_data_source (
-  input            clk,
-  input            reset_n,
-  //avalon slave interface
-  output  [ 31: 0] avs_readdata,
-  input   [  1: 0] avs_address,
-  input            avs_chipselect,
-  input            avs_write_n,
-  input   [ 31: 0] avs_writedata,
+`timescale 1ns / 1ps
+module fpga_data_source # (
+    // Width of address bus in bits
+    parameter ADDR_WIDTH = 6,
+    // Width of input (slave) interface data bus in bits
+    parameter S_DATA_WIDTH = 32,
+    // Width of input (slave) interface wstrb (width of data bus in words)
+    parameter S_STRB_WIDTH = 4,
+    // Width of ID signal
+    parameter ID_WIDTH = 14,
+    // Propagate awuser signal
+    parameter AWUSER_ENABLE = 0,
+    // Width of awuser signal
+    parameter AWUSER_WIDTH = 1,
+    // Propagate wuser signal
+    parameter WUSER_ENABLE = 0,
+    // Width of wuser signal
+    parameter WUSER_WIDTH = 1,
+    // Propagate buser signal
+    parameter BUSER_ENABLE = 0,
+    // Width of buser signal
+    parameter BUSER_WIDTH = 1)
+(
+  input             clk,
+  input             reset_n,
 
-  output [7:0]  axis4_m_tdata,
-  output        axis4_m_tvalid,
-  output        axis4_m_tlast,
-  input         axis4_m_tready
+  //avalon slave interface
+  output  [ 31: 0]  avs_readdata,
+  input   [  1: 0]  avs_address,
+  input             avs_chipselect,
+  input             avs_write_n,
+  input   [ 31: 0]  avs_writedata,
+
+  output [7:0]      axis4_m_tdata,
+  output            axis4_m_tvalid,
+  output            axis4_m_tlast,
+  input             axis4_m_tready,
+
+  input             dma_ack,
+  output            dma_req,
+  output            dma_single, 
+
+  input  wire [ID_WIDTH-1:0]      s_axi_awid,
+  input  wire [ADDR_WIDTH-1:0]    s_axi_awaddr,
+  input  wire [3:0]               s_axi_awlen,
+  input  wire [2:0]               s_axi_awsize,
+  input  wire [1:0]               s_axi_awburst,
+  input  wire [3:0]               s_axi_awcache,
+  input  wire [2:0]               s_axi_awprot,
+  input  wire [AWUSER_WIDTH-1:0]  s_axi_awuser,
+  input  wire                     s_axi_awvalid,
+  output wire                     s_axi_awready,
+  input  wire [1:0]               s_axi_awlock,
+  
+  input  wire [S_DATA_WIDTH-1:0]  s_axi_wdata,
+  input  wire [S_STRB_WIDTH-1:0]  s_axi_wstrb,
+  input  wire                     s_axi_wlast,
+  input  wire                     s_axi_wvalid,
+  output wire                     s_axi_wready,
+  input  wire [ID_WIDTH-1:0]      s_axi_wid,
+
+  output wire [ID_WIDTH-1:0]      s_axi_bid,
+  output wire [1:0]               s_axi_bresp,
+  output wire                     s_axi_bvalid,
+  input  wire                     s_axi_bready,
+
+  input  wire [ID_WIDTH-1:0]      s_axi_arid,
+  input  wire [ADDR_WIDTH-1:0]    s_axi_araddr,
+  input  wire [3:0]               s_axi_arlen,
+  input  wire [2:0]               s_axi_arsize,
+  input  wire [1:0]               s_axi_arburst,
+  input  wire [3:0]               s_axi_arcache,
+  input  wire [2:0]               s_axi_arprot,
+  input  wire                     s_axi_arvalid,
+  output wire                     s_axi_arready,
+  input  wire [1:0]               s_axi_arlock,
+
+  output wire [ID_WIDTH-1:0]      s_axi_rid,
+  output wire [S_DATA_WIDTH-1:0]  s_axi_rdata,
+  output wire [1:0]               s_axi_rresp,
+  output wire                     s_axi_rlast,
+  output wire                     s_axi_rvalid,
+  input  wire                     s_axi_rready
   
 );
 
 wire              clk_en;
-reg [31:0] CTRL, STAT, reg2;
+reg [31:0] CTRL, STAT, DMA_CTRL;
 wire[31:0]  dbg_reg;
 
 
@@ -32,14 +101,14 @@ wire        pend    = STAT[0];
 always @(posedge clk or negedge  reset_n) begin
     if (reset_n == 0) begin
         CTRL <= 0;
-        reg2 <= 0;
+        DMA_CTRL <= 0;
     end else begin
         if (avs_chipselect && ~avs_write_n) begin
           case( avs_address)
             2'b00:
               CTRL <= avs_writedata;
             2'b10:
-              reg2 <= avs_writedata;
+              DMA_CTRL <= avs_writedata;
             default: ;
           endcase
         end else begin
@@ -54,9 +123,9 @@ always @(posedge clk or negedge  reset_n) begin
 
   end
 
-assign  avs_readdata =  avs_address==0? CTRL: 
+assign  avs_readdata =  avs_address==2'b00 ? CTRL: 
                         avs_address==2'b01 ? STAT:
-                        avs_address==2'b10 ? reg2: 
+                        avs_address==2'b10 ? DMA_CTRL: 
                         avs_address==2'b11 ? dbg_reg : 32'hFFFFFFFF;
 
 

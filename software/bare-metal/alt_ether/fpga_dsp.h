@@ -21,6 +21,7 @@
 #define  SRC_CTRL_CMD_DATA_OFST         16
 #define  SRC_CTRL_CMD_CLR_CNT_OFST      31
 
+#define  SRC_KEY_HOLE_REG_OFST          
 
 
 
@@ -48,6 +49,12 @@
 #define  DSP_COEFF1_TAP4_OFST           0
 
 #define  DSP_GPR_OFST                   0x4 //reg1
+
+
+typedef struct FPGA_DSP_s {
+    void *                  location;    /*!< HPS address of I2C instance. */
+}
+FPGA_DSP_t;
 
 
 void writeRamSource(uint16_t addr, uint8_t data);

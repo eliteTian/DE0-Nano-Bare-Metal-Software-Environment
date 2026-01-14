@@ -9,8 +9,7 @@
    <name preferredWidth="380" />
   </columns>
  </systemtable>
- <library
-   expandedCategories="Library/Basic Functions/Simulation; Debug and Verification,Project,Library/Interface Protocols,Library/Basic Functions/Bridges and Adaptors/Memory Mapped,Library/Basic Functions/Bridges and Adaptors,Library/Basic Functions,Library,Library/Basic Functions/Simulation; Debug and Verification/Debug and Performance,Library/Interface Protocols/Serial" />
+ <library expandedCategories="Project/custom logic,Project,Library" />
  <window width="1930" height="1059" x="1915" y="-5" />
  <hdlexample language="VERILOG" />
  <generation block_symbol_file="0" />

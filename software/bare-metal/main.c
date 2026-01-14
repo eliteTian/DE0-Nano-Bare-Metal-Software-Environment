@@ -16,10 +16,10 @@
 #include "fpga_dsp.h"
 #include "alt_cache.h"
 
-
+#define DEBUG_ALT_DMA
 //#define ETH_TEST
-//#define DMA_TEST
-#define PERIPH_TEST
+#define DMA_TEST
+//#define PERIPH_TEST
 #define FRAM_BUF_SIZE 384
 extern UART_INFO_t term0_info;
 extern void dspTest(uint8_t* dsp_arr);
@@ -173,10 +173,6 @@ int eth_main(alt_eth_emac_instance_t* emac) {
             stat = alt_read_word( addr); 
             printf("DBG: DMA interrupt status is                    0x%08x,0x%08x !\n",addr,stat);
         }
-
-
-
-
         //dump_frame_buf(emac);
 
     }

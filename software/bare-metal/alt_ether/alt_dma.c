@@ -69,6 +69,8 @@
 #define ARRAY_COUNT(array) (sizeof(array) / sizeof(array[0]))
 #endif
 
+#define DEBUG_ALT_DMA
+
 #ifdef DEBUG_ALT_DMA
   #define dprintf  printf
 #else
@@ -5840,3 +5842,88 @@ ALT_STATUS_CODE alt_dma_ecc_start(void * block, size_t size)
 
     return ALT_E_SUCCESS;
 }
+
+
+static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program,
+                                                     ALT_DMA_PERIPH_t periph,
+                                                     FPGA_DSP_t* , info
+                                                     uintptr_t eth_buf,
+                                                     size_t request_count,
+                                                     bool first)
+{
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+    dprintf("DMA[M->P][I2C][master][custom]: Create %u custom write(s) [first = %s].\n", request_count, (first ? "true" : "false"));
+
+    if ((status == ALT_E_SUCCESS) && (first)){
+        status = alt_dma_program_DMAMOV(program, ALT_DMA_PROGRAM_REG_DAR,  (uintptr_t)SRC_KEY_HOLE_REG_OFST);
+    }
+
+    if (status == ALT_E_SUCCESS){
+        status = alt_dma_program_DMAMOV(program, ALT_DMA_PROGRAM_REG_SAR,   eth_buf);
+    }
+
+    if ((status == ALT_E_SUCCESS) && (first))
+    {
+        status = alt_dma_program_DMAMOV(program, ALT_DMA_PROGRAM_REG_CCR,
+                                        (   ALT_DMA_CCR_OPT_SAI         //buffer in ddr
+                                          | ALT_DMA_CCR_OPT_SS32
+                                          | ALT_DMA_CCR_OPT_SB1        //buffer is 512Byte, so use SB16 for efficiency
+                                          | ALT_DMA_CCR_OPT_SP_DEFAULT
+                                          | ALT_DMA_CCR_OPT_SC(7)
+                                          | ALT_DMA_CCR_OPT_DAF         //Fixed key hole register that funnels into fifo.
+                                          | ALT_DMA_CCR_OPT_DS32        
+                                          | ALT_DMA_CCR_OPT_DB1        
+                                          | ALT_DMA_CCR_OPT_DP_DEFAULT
+                                          | ALT_DMA_CCR_OPT_DC_DEFAULT
+                                          | ALT_DMA_CCR_OPT_ES_DEFAULT
+                                        )
+            );
+    }
+
+    while (request_count > 0)
+    {
+        uint32_t loopcount = ALT_MIN(request_count, 256);
+        request_count -= loopcount;
+
+        if (status != ALT_E_SUCCESS)
+        {
+            break;
+        }
+
+        dprintf("DMA[M->P][FPGA custom][S]: Creating %" PRIu32 " single-type transfer(s).\n", loopcount);
+
+        if ((status == ALT_E_SUCCESS) && (loopcount > 1))
+        {
+            status = alt_dma_program_DMALP(program, loopcount);
+        }
+
+        if (status == ALT_E_SUCCESS)
+        {
+            status = alt_dma_program_DMAFLUSHP(program, periph);
+        }
+
+        if (status == ALT_E_SUCCESS)
+        {
+            status = alt_dma_program_DMAWFP(program, periph, ALT_DMA_PROGRAM_INST_MOD_SINGLE);
+        }
+
+        if (status == ALT_E_SUCCESS)
+        {
+            status = alt_dma_program_DMALD(program, ALT_DMA_PROGRAM_INST_MOD_SINGLE);
+        }
+
+        if (status == ALT_E_SUCCESS)
+        {
+            status = alt_dma_program_DMAST(program, ALT_DMA_PROGRAM_INST_MOD_SINGLE);
+        }
+
+        if ((status == ALT_E_SUCCESS) && (loopcount > 1))
+        {
+            status = alt_dma_program_DMALPEND(program, ALT_DMA_PROGRAM_INST_MOD_NONE);
+        }
+    }
+
+    return status;
+}
+

@@ -29,7 +29,7 @@
    {
       datum baseAddress
       {
-         value = "0";
+         value = "80";
          type = "String";
       }
    }
@@ -45,7 +45,7 @@
    {
       datum baseAddress
       {
-         value = "48";
+         value = "112";
          type = "String";
       }
    }
@@ -61,7 +61,7 @@
    {
       datum baseAddress
       {
-         value = "16";
+         value = "96";
          type = "String";
       }
    }
@@ -73,11 +73,19 @@
          type = "int";
       }
    }
-   element fpga_data_source_0.avalon_slave_0
+   element fpga_data_source_0.altera_axi_slave
    {
       datum baseAddress
       {
-         value = "32";
+         value = "0";
+         type = "String";
+      }
+   }
+   element fpga_data_source_0.avalon_slave
+   {
+      datum baseAddress
+      {
+         value = "64";
          type = "String";
       }
    }
@@ -285,6 +293,46 @@
          type = "String";
       }
    }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element sysid_qsys
    {
       datum _sortIndex
@@ -397,7 +445,18 @@
    name="fpga_data_source_0"
    kind="fpga_data_source"
    version="1.0"
-   enabled="1" />
+   enabled="1">
+  <parameter name="ADDR_WIDTH" value="6" />
+  <parameter name="AWUSER_ENABLE" value="0" />
+  <parameter name="AWUSER_WIDTH" value="1" />
+  <parameter name="BUSER_ENABLE" value="0" />
+  <parameter name="BUSER_WIDTH" value="1" />
+  <parameter name="ID_WIDTH" value="16" />
+  <parameter name="S_DATA_WIDTH" value="32" />
+  <parameter name="S_STRB_WIDTH" value="4" />
+  <parameter name="WUSER_ENABLE" value="0" />
+  <parameter name="WUSER_WIDTH" value="1" />
+ </module>
  <module
    name="fpga_only_master"
    kind="altera_jtag_avalon_master"
@@ -481,7 +540,7 @@
   <parameter name="DISABLE_CHILD_MESSAGING" value="false" />
   <parameter name="DISCRETE_FLY_BY" value="true" />
   <parameter name="DLL_SHARING_MODE" value="None" />
-  <parameter name="DMA_Enable">No,No,No,No,No,No,No,No</parameter>
+  <parameter name="DMA_Enable">Yes,No,No,No,No,No,No,No</parameter>
   <parameter name="DQS_DQSN_MODE" value="DIFFERENTIAL" />
   <parameter name="DQ_INPUT_REG_USE_CLKN" value="false" />
   <parameter name="DUPLICATE_AC" value="false" />
@@ -961,7 +1020,7 @@
    kind="intr_capturer"
    version="100.99.98.97"
    enabled="1">
-  <parameter name="AUTO_INTERRUPT_RECEIVER_INTERRUPTS_USED" value="4" />
+  <parameter name="AUTO_INTERRUPT_RECEIVER_INTERRUPTS_USED" value="1" />
   <parameter name="NUM_INTR" value="32" />
  </module>
  <module
@@ -1049,9 +1108,18 @@
    kind="avalon"
    version="17.0"
    start="hps_0.h2f_lw_axi_master"
+   end="fpga_data_source_0.altera_axi_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="hps_0.h2f_lw_axi_master"
    end="dsp_apb_0.apb_slave_if">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0030" />
+  <parameter name="baseAddress" value="0x0070" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1067,9 +1135,9 @@
    kind="avalon"
    version="17.0"
    start="hps_0.h2f_lw_axi_master"
-   end="fpga_data_source_0.avalon_slave_0">
+   end="fpga_data_source_0.avalon_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0020" />
+  <parameter name="baseAddress" value="0x0040" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1078,7 +1146,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="fpga_data_sink_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0010" />
+  <parameter name="baseAddress" value="0x0060" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1096,7 +1164,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="dipsw_pio.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="baseAddress" value="0x0050" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1218,14 +1286,14 @@
    version="17.0"
    start="hps_0.f2h_irq0"
    end="jtag_uart.irq">
-  <parameter name="irqNumber" value="2" />
+  <parameter name="irqNumber" value="0" />
  </connection>
  <connection
    kind="interrupt"
    version="17.0"
    start="intr_capturer_0.interrupt_receiver"
    end="jtag_uart.irq">
-  <parameter name="irqNumber" value="2" />
+  <parameter name="irqNumber" value="0" />
  </connection>
  <connection
    kind="reset"
@@ -1282,6 +1350,11 @@
    version="17.0"
    start="clk_0.clk_reset"
    end="intr_capturer_0.reset_sink" />
+ <connection
+   kind="reset"
+   version="17.0"
+   start="fpga_only_master.master_reset"
+   end="fpga_data_source_0.reset" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>

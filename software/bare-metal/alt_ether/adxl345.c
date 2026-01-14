@@ -156,10 +156,20 @@ RET_VAL readADXL345Reg(uint8_t addr, uint8_t* data) {
 
 RET_VAL writeADXL345Reg(uint8_t addr, uint8_t data) {
     uint32_t status;
+    uint32_t cnt = TIMEOUT_VAL;
+    
     pushWrCmd(addr);
     pushWrCmdStop(data);
     checkStatus(&status);
-    return SUCCESS;
+    while(!ALT_I2C_STAT_TFE_GET(status) && cnt!=0) {
+        checkStatus(&status);
+        cnt --;
+    }
+    if(cnt!=0 ) {
+        return SUCCESS;
+    } else {
+        return TIMEOUT;
+    }
 }
 
 
