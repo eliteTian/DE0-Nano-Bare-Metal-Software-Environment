@@ -29,7 +29,7 @@
    {
       datum baseAddress
       {
-         value = "80";
+         value = "64";
          type = "String";
       }
    }
@@ -61,7 +61,7 @@
    {
       datum baseAddress
       {
-         value = "96";
+         value = "80";
          type = "String";
       }
    }
@@ -85,7 +85,7 @@
    {
       datum baseAddress
       {
-         value = "64";
+         value = "96";
          type = "String";
       }
    }
@@ -1137,7 +1137,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="fpga_data_source_0.avalon_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0040" />
+  <parameter name="baseAddress" value="0x0060" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1146,7 +1146,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="fpga_data_sink_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0060" />
+  <parameter name="baseAddress" value="0x0050" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1164,7 +1164,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="dipsw_pio.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0050" />
+  <parameter name="baseAddress" value="0x0040" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1281,6 +1281,17 @@
    version="17.0"
    start="clk_0.clk"
    end="hps_0.h2f_lw_axi_clock" />
+ <connection
+   kind="conduit"
+   version="17.0"
+   start="fpga_data_source_0.conduit"
+   end="hps_0.f2h_dma_req0">
+  <parameter name="endPort" value="" />
+  <parameter name="endPortLSB" value="0" />
+  <parameter name="startPort" value="" />
+  <parameter name="startPortLSB" value="0" />
+  <parameter name="width" value="0" />
+ </connection>
  <connection
    kind="interrupt"
    version="17.0"

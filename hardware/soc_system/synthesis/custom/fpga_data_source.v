@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 module fpga_data_source # (
     // Width of address bus in bits
-    parameter ADDR_WIDTH = 6,
+    parameter ADDR_WIDTH = 10,
     // Width of input (slave) interface data bus in bits
     parameter S_DATA_WIDTH = 32,
     // Width of input (slave) interface wstrb (width of data bus in words)
@@ -85,8 +85,8 @@ module fpga_data_source # (
 );
 
 wire              clk_en;
-reg [31:0] CTRL, STAT, DMA_CTRL;
-wire[31:0]  dbg_reg;
+reg [31:0]          CTRL, STAT, DMA_CTRL;
+wire[31:0]          dbg_reg;
 
 
 wire        cmd_valid = CTRL[0]; // 1 means a pending cmd
@@ -131,9 +131,9 @@ assign  avs_readdata =  avs_address==2'b00 ? CTRL:
 
 reg[7:0]  mem[0:4095];
 reg[11:0] addr;
-reg[7:0]  rdata;
-wire[7:0] rdata_w;
-reg       rvalid;
+reg[7:0]  as_rdata;
+wire[7:0] as_rdata_w;
+reg       as_rvalid;
 
 reg [7:0]  axis4_m_tdata_r;
 reg        axis4_m_tvalid_r;
@@ -146,18 +146,18 @@ reg        clear_cmd;
 always@(posedge clk) begin
     if(wr_en) begin
         mem[addr] <= cmd_data;
-        rvalid <= 1'b0;
+        as_rvalid <= 1'b0;
     end else begin
         if(rd_en) begin
-            rdata <= mem[addr];
-            rvalid <= 1'b1;
+            as_rdata <= mem[addr];
+            as_rvalid <= 1'b1;
         end else begin
-            rvalid <= 1'b0;
+            as_rvalid <= 1'b0;
         end
     end
 end
 
-assign rdata_w = mem[addr];
+assign as_rdata_w = mem[addr];
 
 reg[1:0] state;
 always@(posedge clk, negedge reset_n) begin
@@ -189,7 +189,7 @@ always@(posedge clk, negedge reset_n) begin
                         state <= 2'b00;
                     end else if(cmd_type == 2'b00) begin //read from ram
                         rd_en <= 1'b1;
-                        state <= 2'b01; //wait for rvalid
+                        state <= 2'b01; //wait for as_rvalid
                     end else if(cmd_type == 2'b10) begin //dump block ram from addr 0 via axi4 st if
                         addr <= 0;
                         state <= 2'b10;
@@ -201,9 +201,9 @@ always@(posedge clk, negedge reset_n) begin
             2'b01: begin
                 clear_cmd <= 1'b0;
                 rd_en <= 1'b0;
-                if(rvalid==1'b1) begin
+                if(as_rvalid==1'b1) begin
                     STAT[0] <= 1'b0;
-                    STAT[15:8] <= rdata;
+                    STAT[15:8] <= as_rdata;
                     state <= 2'b00;
                 end
             end
@@ -226,7 +226,7 @@ always@(posedge clk, negedge reset_n) begin
 end
                     
 
-assign axis4_m_tdata = rdata_w;
+assign axis4_m_tdata = as_rdata_w;
 assign axis4_m_tvalid = axis4_m_tvalid_r;
 assign axis4_m_tlast = axis4_m_tlast_r;
 
@@ -248,4 +248,304 @@ assign dbg_reg[15:0] = cnt;
 assign dbg_reg[27:16] = addr;
 assign dbg_reg[29:28] = state;
 
+reg[1:0]    ar_state;
+reg[1:0]    aw_state;
+reg[1:0]    w_state;
+reg[1:0]    b_state;
+reg[1:0]    r_state;
+
+//AXI slave device
+//Two relationships that must be maintained are:
+//• read data must always follow the address to which the data relates
+//• a write response must always follow the last write transfer in the write transaction
+//to which the write response relates.
+//In any transaction:
+//• the VALID signal of one AXI component must not be dependent on the READY
+//signal of the other component in the transaction
+//• the READY signal can wait for assertion of the VALID signal.
+//While it is acceptable to wait for VALID to be asserted before asserting READY, it is
+//also acceptable to assert READY by default prior to the assertion of VALID and this
+//can result in a more efficient design.
+reg [ID_WIDTH-1:0]      awid;
+reg [ADDR_WIDTH-1:0]    awaddr;
+reg [3:0]               awlen;
+reg [2:0]               awsize;
+reg [1:0]               awburst;
+reg [3:0]               awcache;
+reg [2:0]               awprot;
+reg [AWUSER_WIDTH-1:0]  awuser;
+reg [1:0]               awlock;
+reg                     awready;
+reg                     awinfo_acquired;
+wire [31:0]             awinfo = {awsize,awaddr,awlen,awburst};
+wire                    awvalid = s_axi_awvalid;
+
+//only when in b_state==2'b11, this state, wr_phase is possible to be deasserted.
+reg[1:0]                wr_phase; 
+
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        wr_phase <= 2'b00;
+    end else begin
+        if(awvalid && awready) begin //awvalid always asserts first
+            wr_phase <= 2'b01; //commensing
+        end else if (wlast) begin //wrapping up
+            wr_phase <= 2'b10;
+        end else if(bready&bvalid) begin
+            wr_phase <= 2'b00; //idle
+        end
+    end
+end
+
+reg[1:0]                rd_phase; 
+
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        rd_phase <= 2'b00;
+    end else begin
+        if(arvalid & arready) begin //awvalid always asserts first
+            rd_phase <= 2'b01; //commensing
+        end else if (rlast) begin //wrapping up
+            rd_phase <= 2'b10;
+        end 
+    end
+end
+
+
+
+//create a 4K space for AXI slave. Either fixed burst or incr burst can
+//access this region. Incremental burst just fills up the buffer. so a
+//last written address is needed. Either way, wchannel computes axi_addr;
+//AW state machine
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        aw_state <= 2'b00;
+        awready <= 1'b1;
+        awaddr  <= 0;
+        awlen   <= 0;
+        awsize  <= 0;
+        awburst <= 0;
+        awid   <= 0;
+    end else begin
+        case(aw_state)
+            2'b00: begin // idle state, awaiting awvalid
+                awready <= 1'b1;
+                if(awvalid && awready) begin //awvalid always asserts first
+                    awready <= 1'b0;
+                    awaddr  <= s_axi_awaddr;
+                    awlen   <= s_axi_awlen;
+                    awsize  <= s_axi_awsize;
+                    awburst <= s_axi_awburst;
+                    awid   <= s_axi_awid;
+                    aw_state <= 2'b01; //wait for write completion, deassert awready.
+                end
+            end
+            2'b01: begin
+                awready <= 1'b0;
+                if(wr_phase == 2'b10 ) begin
+                    aw_state <= 2'b00;
+                    awaddr  <= 0;
+                    awlen   <= 0;
+                    awsize  <= 0;
+                    awburst <= 0;
+                    awid   <= 0;
+                    awinfo_acquired <= 1'b0;     
+                end
+            end
+        endcase
+    end
+end
+
+reg [S_DATA_WIDTH-1:0]  wdata;
+reg [S_STRB_WIDTH-1:0]  wstrb;
+reg                     wlast;
+reg                     wvalid;
+reg                     wready;
+reg [ID_WIDTH-1:0]      wid;
+reg[9:0]                axi_addr_reg;
+
+//W state machine
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        w_state <= 2'b00;
+        wready <= 1'b1;
+        wid   <= 0;
+        axi_addr_reg <= 0;
+    end else begin
+        case(w_state)
+            2'b00: begin //awaiting registered info from AW channel.
+                wready <= 1'b0;                
+                if(wr_phase==2'b01) begin
+                    if(awlen==0 && awburst==0) begin //only support single, fixed burst for now
+                        w_state <= 2'b01;
+                        axi_addr_reg <= awaddr;
+                    end
+                end
+            end
+            2'b01: begin //writing in operation
+                wready <= 1'b1;
+                if(wvalid && wready) begin
+                    axi_addr_reg <= axi_addr;
+                    if(wlast) begin //awvalid always asserts first
+                        wready     <= 1'b0;
+                        w_state    <= 2'b00; //wait for write completion, deassert awready.
+                    end 
+                end
+            end
+        endcase
+    end
+end
+
+
+reg [ID_WIDTH-1:0]      bid;
+reg [1:0]               bresp;
+reg                     bvalid;
+wire                    bready = s_axi_bready;
+
+//B state machine
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        bid    <= 0;
+        bvalid <= 1'b0;
+        bresp  <= 0;
+
+    end else begin
+        case(b_state)
+            2'b00: begin //awaiting last beat.       
+                if(wr_phase==2'b10) begin
+                    b_state <= 2'b01;
+                    bvalid <= 1'b1;
+                    bresp <= 0;
+                    bid <= awid;
+                end
+            end
+            2'b01: begin //asserting valid and let master know the response
+                if(bready&bvalid) begin
+                    b_state <= 2'b00;
+                    bvalid <= 1'b0;
+                end
+            end
+        endcase
+    end
+end
+
+reg [ID_WIDTH-1:0]      arid;
+reg [ADDR_WIDTH-1:0]    araddr;
+reg [3:0]               arlen;
+reg [2:0]               arsize;
+reg [1:0]               arburst;
+reg [3:0]               arcache;
+reg [2:0]               arprot;
+reg [AWUSER_WIDTH-1:0]  aruser;
+reg [1:0]               arlock;
+reg                     arready;
+wire                    arvalid = s_axi_arvalid;
+
+//AR state machine
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        ar_state <= 2'b00;
+        arready <= 1'b1;
+        araddr  <= 0;
+        arlen   <= 0;
+        arsize  <= 0;
+        arburst <= 0;
+        arid   <= 0;
+    end else begin
+        case(ar_state)
+            2'b00: begin // idle state, awaiting awvalid
+                arready <= 1'b1;
+                if(arvalid && arready) begin //arvalid always asserts first
+                    arready <= 1'b0;
+                    araddr  <= s_axi_araddr;
+                    arlen   <= s_axi_arlen;
+                    arsize  <= s_axi_arsize;
+                    arburst <= s_axi_arburst;
+                    arid   <= s_axi_arid;
+                    ar_state <= 2'b01; //wait for write completion, deassert awready.
+                end
+            end
+            2'b01: begin             
+                arready <= 1'b0;
+                if(rd_phase==2'b01) begin
+                    ar_state <= 2'b00;
+                    araddr  <= 0;
+                    arlen   <= 0;
+                    arsize  <= 0;
+                    arburst <= 0;
+                    arid   <= 0;
+                end
+            end
+        endcase
+    end
+end
+
+
+
+//storage space
+reg[31:0]  axi_mem[0:1024];
+wire[11:0] axi_addr;
+
+assign axi_addr = awaddr;
+
+wire axi_wr_en = wready&wvalid; //so far only burst size 0
+
+always@(posedge clk) begin
+    if(axi_wr_en) begin
+        axi_mem[axi_addr[11:2]] <= s_axi_wdata ;
+    end 
+end
+
+assign rdata = rvalid? axi_mem[araddr]:0;
+
+wire [S_DATA_WIDTH-1:0]  rdata;
+reg [S_STRB_WIDTH-1:0]  rstrb;
+reg                     rlast;
+reg                     rvalid;
+reg                     rready;
+reg [ID_WIDTH-1:0]      rid;
+reg [1:0]               rresp;
+
+
+//R state machine
+always@(posedge clk, negedge reset_n) begin
+    if(!reset_n) begin
+        r_state <= 2'b00;
+        rready <= 1'b1;
+        rid   <= 0;
+        rresp <= 0;
+    end else begin
+        case(r_state)
+            2'b00: begin //awaiting registered info from AW channel.
+                rready <= 1'b0;                
+                if(rd_phase==2'b01) begin
+                    if(arlen==0 && arburst==0) begin //only support single, fixed burst read for now
+                        r_state <= 2'b01;
+                        rvalid <= 1'b1;
+                        rlast <= 1'b1;
+                        rid <= arid;
+                    end
+                end
+            end
+            2'b01: begin //waiting for handshake from master
+                if(rready & rvalid) begin
+                    rresp <= 2'b00;
+                    r_state <= 2'b00;
+                end
+            end
+        endcase
+    end
+end
+
+assign s_axi_awready    = awready;
+assign s_axi_wready     = wready;
+assign s_axi_arready    = arready;
+assign s_axi_bid        = bid;
+assign s_axi_bresp      = bresp;
+assign s_axi_bvalid     = bvalid;
+assign s_axi_rid        = rid;
+assign s_axi_rdata      = rdata;
+assign s_axi_rresp      = rresp;
+assign s_axi_rlast      = rlast;
+assign s_axi_rvalid     = rvalid;
 endmodule
