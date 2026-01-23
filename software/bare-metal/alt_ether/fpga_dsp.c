@@ -63,6 +63,18 @@ static int8_t extractFrame(uint16_t index, uint8_t* src){
 }
 
 
+void readAXISpace(uint32_t offset, uint32_t* rdata){
+    volatile uint32_t* addr = (volatile uint32_t*)(ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_BASE+offset);
+    //printf("AXI Read address: %p\n", addr );
+    *rdata = *addr;
+}
+
+void writeAXISpace(uint32_t offset, uint32_t wdata){
+    volatile uint32_t* addr = (volatile uint32_t*)(ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_BASE+offset);
+    //printf("AXI Write address: %p\n", addr );    
+    *addr = wdata;
+}
+
 
 
 
@@ -74,7 +86,7 @@ void writeRamSource(uint16_t addr, uint8_t data){ //bug found here. addr was uin
     reg_val |= 0x1<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
 
-    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_CTRL_OFST);
     *reg_addr = reg_val;
     //printf("Command register into FPGA is: 0x%08x\r\n", reg_val );
 
@@ -87,11 +99,11 @@ void readRamSource(uint16_t addr, uint8_t* rdata){//bug found here.
     reg_val |= 0x0<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
     uint32_t temp, pend;
-    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_CTRL_OFST);
     *reg_addr = reg_val;
     //printf("Command register into FPGA is: 0x%08x\r\n", reg_val );
 
-    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_STATUS_OFST);
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_STATUS_OFST);
     do{
         temp = *reg_addr;
         pend = temp & SRC_STATUS_PEND;
@@ -146,18 +158,18 @@ void waitStatusComplete(void) {
 }
 
 void writeGPRSource(uint32_t data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_GPR_OFST);
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_GPR_OFST);
     *reg_addr = data;
 }
 
 void readGPRSource(uint32_t* data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_GPR_OFST);
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_GPR_OFST);
     *data = *reg_addr;
 }
 
 
 void readCTRLSource(uint32_t* data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_CTRL_OFST);
     *data = *reg_addr;
 }
 
@@ -169,7 +181,7 @@ void readCTRLSink(uint32_t* data){
 
 
 void readDbgSource(uint32_t* data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_DBG_OFST);
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_DBG_OFST);
     *data = *reg_addr;
 }
 
@@ -197,7 +209,7 @@ void dumpRamSource(void) {
     volatile uint32_t* reg_addr;
     reg_val |= 0x2<<SRC_CTRL_CMD_TYPE_OFST;
     reg_val |= 0x1<<SRC_CTRL_CMD_VALID_OFST;
-    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_BASE+SRC_CTRL_OFST);
+    reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_CTRL_OFST);
     *reg_addr = reg_val;
 }
 
@@ -495,7 +507,43 @@ void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len) {
 
 }
 
+void axiTest() {
+    gprTest();
+    printf("TEST AXI interface\r\n");
+    uint32_t wdata;
+    uint32_t rdata;
+    uint32_t offset;
+    offset = 0;
+    wdata = 0x931ab6f0;
+    bool err_flag = 0;
+    readAXISpace(offset, &rdata); 
+    writeAXISpace(offset, wdata);  
+    
+    readAXISpace(offset, &rdata);
+    //writeAXISpace(offset, wdata);    
+    printf("AXI test: 0x%08x\r\n", rdata );
+    for(offset=0;offset<4096;offset=offset+4) {
+        wdata = rand() % MAX_DATA; //generate a random value between 0 - 2**32
+        writeAXISpace(offset, wdata);
+        readAXISpace(offset, &rdata);
+        if(rdata!=wdata) {
+            printf("AXI test fail: rdata:0x%08x != wdata:0x%08x \r\n", rdata, wdata );
+            err_flag = 1;
+            break;
+        } else {
+           // printf("AXI test success: rdata:0x%08x == wdata:0x%08x \r\n", rdata, wdata );
+        }
 
+    }  
+    if(err_flag) {
+        printf("AXI test fail");
+    } else {
+        printf("AXI test success");
+    }
+
+
+
+}
 
 
 

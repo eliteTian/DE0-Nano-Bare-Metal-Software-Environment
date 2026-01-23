@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simPackage>
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/verbosity_pkg.sv"
+   type="SYSTEM_VERILOG"
+   library="altera_common_sv_packages"
+   systemVerilogPackageName="avalon_vip_verbosity_pkg" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/soc_system_dipsw_pio.v"
+   type="VERILOG"
+   library="dipsw_pio" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_conduit_bfm_0005.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_memory_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_conduit_bfm_0004.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_led_pio_external_connection_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_conduit_bfm_0003.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_hps_0_hps_io_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_conduit_bfm_0002.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_hps_0_f2h_stm_hw_events_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_avalon_reset_source.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_hps_0_f2h_cold_reset_req_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_conduit_bfm.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_dipsw_pio_external_connection_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/altera_avalon_clock_source.sv"
+   type="SYSTEM_VERILOG"
+   library="soc_system_inst_clk_bfm" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/submodules/soc_system.v"
+   type="VERILOG"
+   library="soc_system_inst" />
+ <file
+   path="soc_system/testbench/soc_system_tb/simulation/soc_system_tb.v"
+   type="VERILOG" />
+ <topLevel name="soc_system_tb" />
+ <deviceFamily name="cyclonev" />
+ <modelMap
+   controllerPath="soc_system_tb.soc_system_inst.hps_0"
+   modelPath="soc_system_tb.soc_system_inst.hps_0" />
+ <modelMap
+   controllerPath="soc_system_tb.soc_system_inst.hps_0.fpga_interfaces"
+   modelPath="soc_system_tb.soc_system_inst.hps_0.fpga_interfaces" />
+ <modelMap
+   controllerPath="soc_system_tb.soc_system_inst.hps_0.hps_io"
+   modelPath="soc_system_tb.soc_system_inst.hps_0.hps_io" />
+ <modelMap
+   controllerPath="soc_system_tb.soc_system_inst.onchip_memory2_0"
+   modelPath="soc_system_tb.soc_system_inst.onchip_memory2_0" />
+</simPackage>

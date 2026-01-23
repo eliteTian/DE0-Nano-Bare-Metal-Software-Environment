@@ -1,11 +1,11 @@
 `timescale 1ns / 1ps
 module fpga_data_source # (
     // Width of address bus in bits
-    parameter ADDR_WIDTH = 10,
+    parameter ADDR_WIDTH = 12,
     // Width of input (slave) interface data bus in bits
-    parameter S_DATA_WIDTH = 32,
+    parameter DATA_WIDTH = 32,
     // Width of input (slave) interface wstrb (width of data bus in words)
-    parameter S_STRB_WIDTH = 4,
+    parameter STRB_WIDTH = 4,
     // Width of ID signal
     parameter ID_WIDTH = 14,
     // Propagate awuser signal
@@ -22,7 +22,7 @@ module fpga_data_source # (
     parameter BUSER_WIDTH = 1)
 (
   input             clk,
-  input             reset_n,
+  input             rst,
 
   //avalon slave interface
   output  [ 31: 0]  avs_readdata,
@@ -40,47 +40,47 @@ module fpga_data_source # (
   output            dma_req,
   output            dma_single, 
 
-  input  wire [ID_WIDTH-1:0]      s_axi_awid,
-  input  wire [ADDR_WIDTH-1:0]    s_axi_awaddr,
-  input  wire [3:0]               s_axi_awlen,
-  input  wire [2:0]               s_axi_awsize,
-  input  wire [1:0]               s_axi_awburst,
-  input  wire [3:0]               s_axi_awcache,
-  input  wire [2:0]               s_axi_awprot,
-  input  wire [AWUSER_WIDTH-1:0]  s_axi_awuser,
-  input  wire                     s_axi_awvalid,
-  output wire                     s_axi_awready,
-  input  wire [1:0]               s_axi_awlock,
+  input  wire [ID_WIDTH-1:0]      axi_awid, //
+  input  wire [ADDR_WIDTH-1:0]    axi_awaddr, //
+  input  wire [3:0]               axi_awlen, //
+  input  wire [2:0]               axi_awsize, //
+  input  wire [1:0]               axi_awburst,
+  input  wire [3:0]               axi_awcache,
+  input  wire [2:0]               axi_awprot,
+  input  wire [AWUSER_WIDTH-1:0]  axi_awuser,
+  input  wire                     axi_awvalid,//
+  output wire                     axi_awready,
+  input  wire [1:0]               axi_awlock,
   
-  input  wire [S_DATA_WIDTH-1:0]  s_axi_wdata,
-  input  wire [S_STRB_WIDTH-1:0]  s_axi_wstrb,
-  input  wire                     s_axi_wlast,
-  input  wire                     s_axi_wvalid,
-  output wire                     s_axi_wready,
-  input  wire [ID_WIDTH-1:0]      s_axi_wid,
+  input  wire [DATA_WIDTH-1:0]  axi_wdata,
+  input  wire [STRB_WIDTH-1:0]  axi_wstrb,
+  input  wire                     axi_wlast,
+  input  wire                     axi_wvalid,
+  output wire                     axi_wready,
+  input  wire [ID_WIDTH-1:0]      axi_wid,
 
-  output wire [ID_WIDTH-1:0]      s_axi_bid,
-  output wire [1:0]               s_axi_bresp,
-  output wire                     s_axi_bvalid,
-  input  wire                     s_axi_bready,
+  output wire [ID_WIDTH-1:0]      axi_bid,
+  output wire [1:0]               axi_bresp,
+  output wire                     axi_bvalid,
+  input  wire                     axi_bready,
 
-  input  wire [ID_WIDTH-1:0]      s_axi_arid,
-  input  wire [ADDR_WIDTH-1:0]    s_axi_araddr,
-  input  wire [3:0]               s_axi_arlen,
-  input  wire [2:0]               s_axi_arsize,
-  input  wire [1:0]               s_axi_arburst,
-  input  wire [3:0]               s_axi_arcache,
-  input  wire [2:0]               s_axi_arprot,
-  input  wire                     s_axi_arvalid,
-  output wire                     s_axi_arready,
-  input  wire [1:0]               s_axi_arlock,
+  input  wire [ID_WIDTH-1:0]      axi_arid,
+  input  wire [ADDR_WIDTH-1:0]    axi_araddr,
+  input  wire [3:0]               axi_arlen,
+  input  wire [2:0]               axi_arsize,
+  input  wire [1:0]               axi_arburst,
+  input  wire [3:0]               axi_arcache,
+  input  wire [2:0]               axi_arprot,
+  input  wire                     axi_arvalid,
+  output wire                     axi_arready,
+  input  wire [1:0]               axi_arlock,
 
-  output wire [ID_WIDTH-1:0]      s_axi_rid,
-  output wire [S_DATA_WIDTH-1:0]  s_axi_rdata,
-  output wire [1:0]               s_axi_rresp,
-  output wire                     s_axi_rlast,
-  output wire                     s_axi_rvalid,
-  input  wire                     s_axi_rready
+  output wire [ID_WIDTH-1:0]      axi_rid,
+  output wire [DATA_WIDTH-1:0]  axi_rdata,
+  output wire [1:0]               axi_rresp,
+  output wire                     axi_rlast,
+  output wire                     axi_rvalid,
+  input  wire                     axi_rready
   
 );
 
@@ -98,8 +98,8 @@ wire        cmd_clear_cnt = CTRL[31];
 wire        pend    = STAT[0];
 
 
-always @(posedge clk or negedge  reset_n) begin
-    if (reset_n == 0) begin
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
         CTRL <= 0;
         DMA_CTRL <= 0;
     end else begin
@@ -160,8 +160,8 @@ end
 assign as_rdata_w = mem[addr];
 
 reg[1:0] state;
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
         state <= 2'b00;
         STAT <= 0;
         axis4_m_tdata_r <= 0;
@@ -232,8 +232,8 @@ assign axis4_m_tlast = axis4_m_tlast_r;
 
 reg[15:0] cnt;
  
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
         cnt <= 0;
     end else begin
         if(cmd_clear_cnt) begin
@@ -278,38 +278,8 @@ reg [1:0]               awlock;
 reg                     awready;
 reg                     awinfo_acquired;
 wire [31:0]             awinfo = {awsize,awaddr,awlen,awburst};
-wire                    awvalid = s_axi_awvalid;
+wire                    awvalid = axi_awvalid;
 
-//only when in b_state==2'b11, this state, wr_phase is possible to be deasserted.
-reg[1:0]                wr_phase; 
-
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
-        wr_phase <= 2'b00;
-    end else begin
-        if(awvalid && awready) begin //awvalid always asserts first
-            wr_phase <= 2'b01; //commensing
-        end else if (wlast) begin //wrapping up
-            wr_phase <= 2'b10;
-        end else if(bready&bvalid) begin
-            wr_phase <= 2'b00; //idle
-        end
-    end
-end
-
-reg[1:0]                rd_phase; 
-
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
-        rd_phase <= 2'b00;
-    end else begin
-        if(arvalid & arready) begin //awvalid always asserts first
-            rd_phase <= 2'b01; //commensing
-        end else if (rlast) begin //wrapping up
-            rd_phase <= 2'b10;
-        end 
-    end
-end
 
 
 
@@ -317,115 +287,103 @@ end
 //access this region. Incremental burst just fills up the buffer. so a
 //last written address is needed. Either way, wchannel computes axi_addr;
 //AW state machine
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
-        aw_state <= 2'b00;
-        awready <= 1'b1;
+//
+//
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
+        awready <= 1'b0;
         awaddr  <= 0;
         awlen   <= 0;
         awsize  <= 0;
         awburst <= 0;
         awid   <= 0;
     end else begin
-        case(aw_state)
-            2'b00: begin // idle state, awaiting awvalid
-                awready <= 1'b1;
-                if(awvalid && awready) begin //awvalid always asserts first
-                    awready <= 1'b0;
-                    awaddr  <= s_axi_awaddr;
-                    awlen   <= s_axi_awlen;
-                    awsize  <= s_axi_awsize;
-                    awburst <= s_axi_awburst;
-                    awid   <= s_axi_awid;
-                    aw_state <= 2'b01; //wait for write completion, deassert awready.
-                end
-            end
-            2'b01: begin
-                awready <= 1'b0;
-                if(wr_phase == 2'b10 ) begin
-                    aw_state <= 2'b00;
-                    awaddr  <= 0;
-                    awlen   <= 0;
-                    awsize  <= 0;
-                    awburst <= 0;
-                    awid   <= 0;
-                    awinfo_acquired <= 1'b0;     
-                end
-            end
-        endcase
+        if(awvalid && wvalid && ~awready && ~wready) begin //awvalid always asserts first
+            awaddr  <= axi_awaddr;
+            awlen   <= axi_awlen;
+            awsize  <= axi_awsize;
+            awburst <= axi_awburst;
+            awid    <= axi_awid;
+            awready <= 1'b1;
+        end else begin
+            awready <= 1'b0;
+        end
     end
 end
-
-reg [S_DATA_WIDTH-1:0]  wdata;
-reg [S_STRB_WIDTH-1:0]  wstrb;
-reg                     wlast;
-reg                     wvalid;
+wire [DATA_WIDTH-1:0]  wdata = axi_wdata;
+wire [STRB_WIDTH-1:0]  wstrb =axi_wstrb;
+wire                    wlast = axi_wlast;
+wire                    wvalid = axi_wvalid ;
 reg                     wready;
 reg [ID_WIDTH-1:0]      wid;
-reg[9:0]                axi_addr_reg;
 
+reg[ADDR_WIDTH -1:0] wr_addr;
+
+wire[31:0] wr_mask;
+genvar i;
+generate
+    for(i = 0; i!= STRB_WIDTH; i=i+1) begin : STROBE
+        assign wr_mask[8*(i+1)-1:8*i] = wstrb[i]? 8'hFF: 0;
+    end
+endgenerate
+
+wire[ADDR_WIDTH-3:0] ram_index = wr_addr[ADDR_WIDTH-1:2];
 //W state machine
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
+reg write_pending;
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
         w_state <= 2'b00;
-        wready <= 1'b1;
+        wready <= 1'b0;
         wid   <= 0;
-        axi_addr_reg <= 0;
+        wr_addr <= 0;
+        write_pending <= 1'b0;
     end else begin
-        case(w_state)
-            2'b00: begin //awaiting registered info from AW channel.
-                wready <= 1'b0;                
-                if(wr_phase==2'b01) begin
-                    if(awlen==0 && awburst==0) begin //only support single, fixed burst for now
-                        w_state <= 2'b01;
-                        axi_addr_reg <= awaddr;
-                    end
-                end
+        if(awvalid && wvalid && ~awready && ~write_pending) begin //new AW addr update cycle.next cycle awready asserts
+            wr_addr <= axi_awaddr; 
+            wready <= 1'b1;
+            write_pending <= 1'b1;
+        end else if(wvalid & write_pending) begin // If not aw addr update cycle, take data when wvalid.
+            if(wlast) begin
+                axi_mem[ram_index] <= wdata & wr_mask;
+                wready <= 1'b0;
+                write_pending <= 1'b0;
+            end else begin
+                axi_mem[ram_index] <= wdata & wr_mask ;            
+                wr_addr <= wr_addr + 4;
             end
-            2'b01: begin //writing in operation
-                wready <= 1'b1;
-                if(wvalid && wready) begin
-                    axi_addr_reg <= axi_addr;
-                    if(wlast) begin //awvalid always asserts first
-                        wready     <= 1'b0;
-                        w_state    <= 2'b00; //wait for write completion, deassert awready.
-                    end 
-                end
-            end
-        endcase
+        end
+        
     end
 end
+
+
 
 
 reg [ID_WIDTH-1:0]      bid;
 reg [1:0]               bresp;
 reg                     bvalid;
-wire                    bready = s_axi_bready;
+wire                    bready = axi_bready;
 
 //B state machine
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
         bid    <= 0;
         bvalid <= 1'b0;
         bresp  <= 0;
-
+        b_state <= 0;
     end else begin
-        case(b_state)
-            2'b00: begin //awaiting last beat.       
-                if(wr_phase==2'b10) begin
-                    b_state <= 2'b01;
-                    bvalid <= 1'b1;
-                    bresp <= 0;
-                    bid <= awid;
-                end
+        if(wlast&wready&wvalid) begin // finish condition
+            if(bready&&bvalid) begin //when handshake happens, can deassert bvalid
+                bvalid <= 1'b0; //assert bvalid regardless of bready
+            end else begin //assert first and check handshake
+                bvalid <= 1'b1;
             end
-            2'b01: begin //asserting valid and let master know the response
-                if(bready&bvalid) begin
-                    b_state <= 2'b00;
-                    bvalid <= 1'b0;
-                end
-            end
-        endcase
+            bresp <= 0;
+            bid <= awid;
+        end else begin 
+            bvalid <= 1'b0;
+        end
+
     end
 end
 
@@ -439,113 +397,101 @@ reg [2:0]               arprot;
 reg [AWUSER_WIDTH-1:0]  aruser;
 reg [1:0]               arlock;
 reg                     arready;
-wire                    arvalid = s_axi_arvalid;
+wire                    arvalid = axi_arvalid;
 
 //AR state machine
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
-        ar_state <= 2'b00;
-        arready <= 1'b1;
-        araddr  <= 0;
-        arlen   <= 0;
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
+        arready <= 1'b0;
         arsize  <= 0;
         arburst <= 0;
-        arid   <= 0;
+        arid    <= 0;
     end else begin
-        case(ar_state)
-            2'b00: begin // idle state, awaiting awvalid
-                arready <= 1'b1;
-                if(arvalid && arready) begin //arvalid always asserts first
-                    arready <= 1'b0;
-                    araddr  <= s_axi_araddr;
-                    arlen   <= s_axi_arlen;
-                    arsize  <= s_axi_arsize;
-                    arburst <= s_axi_arburst;
-                    arid   <= s_axi_arid;
-                    ar_state <= 2'b01; //wait for write completion, deassert awready.
-                end
-            end
-            2'b01: begin             
-                arready <= 1'b0;
-                if(rd_phase==2'b01) begin
-                    ar_state <= 2'b00;
-                    araddr  <= 0;
-                    arlen   <= 0;
-                    arsize  <= 0;
-                    arburst <= 0;
-                    arid   <= 0;
-                end
-            end
-        endcase
+        if(arvalid && ~read_pending) begin //arvalid always asserts first
+            arready <= 1'b1;
+            arsize  <= axi_arsize;
+            arburst <= axi_arburst;
+        end else begin
+            arready <= 1'b0;
+        end
+
     end
 end
-
 
 
 //storage space
-reg[31:0]  axi_mem[0:1024];
-wire[11:0] axi_addr;
+reg[31:0]  axi_mem[0:2**(ADDR_WIDTH-3)-1]; //each is a word, not a bite.
 
-assign axi_addr = awaddr;
 
-wire axi_wr_en = wready&wvalid; //so far only burst size 0
+wire[ADDR_WIDTH-3:0] rd_ram_index = araddr[ADDR_WIDTH-1:2];
+assign rdata = rvalid? axi_mem[rd_ram_index]:0;
 
-always@(posedge clk) begin
-    if(axi_wr_en) begin
-        axi_mem[axi_addr[11:2]] <= s_axi_wdata ;
-    end 
-end
-
-assign rdata = rvalid? axi_mem[araddr]:0;
-
-wire [S_DATA_WIDTH-1:0]  rdata;
-reg [S_STRB_WIDTH-1:0]  rstrb;
+wire [DATA_WIDTH-1:0]  rdata;
+reg [STRB_WIDTH-1:0]  rstrb;
 reg                     rlast;
 reg                     rvalid;
-reg                     rready;
 reg [ID_WIDTH-1:0]      rid;
 reg [1:0]               rresp;
-
+wire                    rready = axi_rready;
+reg                     read_pending;
 
 //R state machine
-always@(posedge clk, negedge reset_n) begin
-    if(!reset_n) begin
-        r_state <= 2'b00;
-        rready <= 1'b1;
-        rid   <= 0;
-        rresp <= 0;
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
+        rid          <= 0;
+        rresp        <= 0;
+        rlast        <= 1'b0;
+        rvalid       <= 1'b0;
+        read_pending <= 1'b0;
+        arlen   <= 0;        
+        araddr  <= 0;
+
     end else begin
-        case(r_state)
-            2'b00: begin //awaiting registered info from AW channel.
-                rready <= 1'b0;                
-                if(rd_phase==2'b01) begin
-                    if(arlen==0 && arburst==0) begin //only support single, fixed burst read for now
-                        r_state <= 2'b01;
-                        rvalid <= 1'b1;
-                        rlast <= 1'b1;
-                        rid <= arid;
-                    end
+        if(~read_pending) begin
+            rlast <= 1'b0;
+            rvalid <= 1'b0;
+            
+            if(arvalid && arready) begin //update araddr/ arlen
+                araddr  <= axi_araddr;
+                rid     <= axi_arid;
+                if(axi_arlen==0) begin
+                    rvalid <= 1'b1;
+                    rlast  <= 1'b1;
+                end else begin
+                    read_pending <= 1'b1;
+                    rvalid <= 1'b1;
+                    arlen <= axi_arlen-1;
+
                 end
             end
-            2'b01: begin //waiting for handshake from master
-                if(rready & rvalid) begin
-                    rresp <= 2'b00;
-                    r_state <= 2'b00;
+        end else begin
+            if(arlen!=0) begin
+                if(rready) begin
+                    arlen <= arlen - 1;
+                    araddr <= araddr + 4;
+                end
+            end else begin //last beat
+                rlast <= 1'b1;
+                if(rready) begin
+                    araddr <= araddr + 4;
+                    read_pending <= 1'b0;
                 end
             end
-        endcase
+        end
+
     end
 end
 
-assign s_axi_awready    = awready;
-assign s_axi_wready     = wready;
-assign s_axi_arready    = arready;
-assign s_axi_bid        = bid;
-assign s_axi_bresp      = bresp;
-assign s_axi_bvalid     = bvalid;
-assign s_axi_rid        = rid;
-assign s_axi_rdata      = rdata;
-assign s_axi_rresp      = rresp;
-assign s_axi_rlast      = rlast;
-assign s_axi_rvalid     = rvalid;
+assign axi_awready    = awready;
+assign axi_wready     = wready;
+assign axi_arready    = arready;
+assign axi_bid        = bid;
+assign axi_bresp      = bresp;
+assign axi_bvalid     = bvalid;
+assign axi_rid        = rid;
+assign axi_rdata      = rdata;
+assign axi_rresp      = rresp;
+assign axi_rlast      = rlast;
+assign axi_rvalid     = rvalid;
+
 endmodule

@@ -5843,7 +5843,7 @@ ALT_STATUS_CODE alt_dma_ecc_start(void * block, size_t size)
     return ALT_E_SUCCESS;
 }
 
-
+/*
 static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program,
                                                      ALT_DMA_PERIPH_t periph,
                                                      FPGA_DSP_t* , info
@@ -5926,4 +5926,4 @@ static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program
 
     return status;
 }
-
+*/

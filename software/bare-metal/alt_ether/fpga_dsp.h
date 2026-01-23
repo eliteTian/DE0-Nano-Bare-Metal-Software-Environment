@@ -6,7 +6,7 @@
 #include "socal/hps.h"
 #include "socal/socal.h"
 #include "hps_0.h"
-
+#include <stdlib.h>
 #define  RAM_SIZE                       4096
 
 #define  SRC_CTRL_OFST                  0x0
@@ -50,7 +50,7 @@
 
 #define  DSP_GPR_OFST                   0x4 //reg1
 
-
+#define  MAX_DATA                       0xFFFFFFFFUL
 typedef struct FPGA_DSP_s {
     void *                  location;    /*!< HPS address of I2C instance. */
 }
@@ -80,7 +80,12 @@ void getCoeff0(uint32_t* data);
 void getCoeff1(uint32_t* data);
 void dspGainSet(uint8_t gain);
 
+void readAXISpace(uint32_t offset, uint32_t* rdata);
+void writeAXISpace(uint32_t offset, uint32_t wdata);
+void axiTest();
 
+void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len);
+void ethCtlLed(uint8_t* rx_packet );
 
 
 

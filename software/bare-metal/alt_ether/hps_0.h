@@ -54,15 +54,26 @@
 #define ONCHIP_MEMORY2_0_MEMORY_INFO_MEM_INIT_FILENAME soc_system_onchip_memory2_0
 
 /*
+ * Macros for device 'fpga_data_source_0_altera_axi_slave', class 'fpga_data_source'
+ * The macros are prefixed with 'FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_'.
+ * The prefix is the slave descriptor.
+ */
+#define FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_COMPONENT_TYPE fpga_data_source
+#define FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_COMPONENT_NAME fpga_data_source_0
+#define FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_BASE 0x0
+#define FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_SPAN 4096
+#define FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_END 0xfff
+
+/*
  * Macros for device 'dipsw_pio', class 'altera_avalon_pio'
  * The macros are prefixed with 'DIPSW_PIO_'.
  * The prefix is the slave descriptor.
  */
 #define DIPSW_PIO_COMPONENT_TYPE altera_avalon_pio
 #define DIPSW_PIO_COMPONENT_NAME dipsw_pio
-#define DIPSW_PIO_BASE 0x0
+#define DIPSW_PIO_BASE 0x1000
 #define DIPSW_PIO_SPAN 16
-#define DIPSW_PIO_END 0xf
+#define DIPSW_PIO_END 0x100f
 #define DIPSW_PIO_BIT_CLEARING_EDGE_REGISTER 0
 #define DIPSW_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define DIPSW_PIO_CAPTURE 0
@@ -84,20 +95,20 @@
  */
 #define FPGA_DATA_SINK_0_COMPONENT_TYPE fpga_data_sink
 #define FPGA_DATA_SINK_0_COMPONENT_NAME fpga_data_sink_0
-#define FPGA_DATA_SINK_0_BASE 0x10
+#define FPGA_DATA_SINK_0_BASE 0x1010
 #define FPGA_DATA_SINK_0_SPAN 16
-#define FPGA_DATA_SINK_0_END 0x1f
+#define FPGA_DATA_SINK_0_END 0x101f
 
 /*
- * Macros for device 'fpga_data_source_0', class 'fpga_data_source'
- * The macros are prefixed with 'FPGA_DATA_SOURCE_0_'.
+ * Macros for device 'fpga_data_source_0_avalon_slave', class 'fpga_data_source'
+ * The macros are prefixed with 'FPGA_DATA_SOURCE_0_AVALON_SLAVE_'.
  * The prefix is the slave descriptor.
  */
-#define FPGA_DATA_SOURCE_0_COMPONENT_TYPE fpga_data_source
-#define FPGA_DATA_SOURCE_0_COMPONENT_NAME fpga_data_source_0
-#define FPGA_DATA_SOURCE_0_BASE 0x20
-#define FPGA_DATA_SOURCE_0_SPAN 16
-#define FPGA_DATA_SOURCE_0_END 0x2f
+#define FPGA_DATA_SOURCE_0_AVALON_SLAVE_COMPONENT_TYPE fpga_data_source
+#define FPGA_DATA_SOURCE_0_AVALON_SLAVE_COMPONENT_NAME fpga_data_source_0
+#define FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE 0x1020
+#define FPGA_DATA_SOURCE_0_AVALON_SLAVE_SPAN 16
+#define FPGA_DATA_SOURCE_0_AVALON_SLAVE_END 0x102f
 
 /*
  * Macros for device 'dsp_apb_0', class 'dsp_apb'
@@ -106,9 +117,9 @@
  */
 #define DSP_APB_0_COMPONENT_TYPE dsp_apb
 #define DSP_APB_0_COMPONENT_NAME dsp_apb_0
-#define DSP_APB_0_BASE 0x30
+#define DSP_APB_0_BASE 0x1030
 #define DSP_APB_0_SPAN 16
-#define DSP_APB_0_END 0x3f
+#define DSP_APB_0_END 0x103f
 
 /*
  * Macros for device 'sysid_qsys', class 'altera_avalon_sysid_qsys'
@@ -121,7 +132,7 @@
 #define SYSID_QSYS_SPAN 8
 #define SYSID_QSYS_END 0x10007
 #define SYSID_QSYS_ID 2899645186
-#define SYSID_QSYS_TIMESTAMP 1763778418
+#define SYSID_QSYS_TIMESTAMP 1769192773
 
 /*
  * Macros for device 'led_pio', class 'altera_avalon_pio'
@@ -157,7 +168,7 @@
 #define JTAG_UART_BASE 0x20000
 #define JTAG_UART_SPAN 8
 #define JTAG_UART_END 0x20007
-#define JTAG_UART_IRQ 2
+#define JTAG_UART_IRQ 0
 #define JTAG_UART_READ_DEPTH 64
 #define JTAG_UART_READ_THRESHOLD 8
 #define JTAG_UART_WRITE_DEPTH 64

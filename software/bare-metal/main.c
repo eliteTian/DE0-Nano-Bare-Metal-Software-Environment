@@ -17,8 +17,9 @@
 #include "alt_cache.h"
 
 #define DEBUG_ALT_DMA
+#define FPGA_TEST
 //#define ETH_TEST
-#define DMA_TEST
+//#define DMA_TEST
 //#define PERIPH_TEST
 #define FRAM_BUF_SIZE 384
 extern UART_INFO_t term0_info;
@@ -28,8 +29,6 @@ extern void ethSinTest(uint8_t* eth_src, uint8_t* dsp_arr);
 
 extern void ethernet_raw_frame_gen(uint32_t len, uint8_t* dst_addr_arr, uint8_t* arr);
 extern void dump_frame_buf(alt_eth_emac_instance_t * emac );
-extern void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len);
-extern void ethCtlLed(uint8_t* rx_packet );
 extern uint8_t MAC_ADDR[6]; 
 extern uint8_t rx_frame_buffer[ETH_BUFFER_SIZE];
 extern uint8_t tx_frame_buffer[ETH_BUFFER_SIZE];
@@ -98,6 +97,10 @@ int main(void) {
     
 #ifdef DMA_TEST
     dma_main();
+#endif
+
+#ifdef FPGA_TEST   
+    axiTest();
 #endif
     
     while(1);

@@ -29,7 +29,7 @@
    {
       datum baseAddress
       {
-         value = "64";
+         value = "4096";
          type = "String";
       }
    }
@@ -45,7 +45,7 @@
    {
       datum baseAddress
       {
-         value = "112";
+         value = "4144";
          type = "String";
       }
    }
@@ -61,7 +61,7 @@
    {
       datum baseAddress
       {
-         value = "80";
+         value = "4112";
          type = "String";
       }
    }
@@ -85,7 +85,7 @@
    {
       datum baseAddress
       {
-         value = "96";
+         value = "4128";
          type = "String";
       }
    }
@@ -333,6 +333,46 @@
          type = "String";
       }
    }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element sysid_qsys
    {
       datum _sortIndex
@@ -446,14 +486,14 @@
    kind="fpga_data_source"
    version="1.0"
    enabled="1">
-  <parameter name="ADDR_WIDTH" value="6" />
+  <parameter name="ADDR_WIDTH" value="12" />
   <parameter name="AWUSER_ENABLE" value="0" />
   <parameter name="AWUSER_WIDTH" value="1" />
   <parameter name="BUSER_ENABLE" value="0" />
   <parameter name="BUSER_WIDTH" value="1" />
-  <parameter name="ID_WIDTH" value="16" />
-  <parameter name="S_DATA_WIDTH" value="32" />
-  <parameter name="S_STRB_WIDTH" value="4" />
+  <parameter name="DATA_WIDTH" value="32" />
+  <parameter name="ID_WIDTH" value="14" />
+  <parameter name="STRB_WIDTH" value="4" />
   <parameter name="WUSER_ENABLE" value="0" />
   <parameter name="WUSER_WIDTH" value="1" />
  </module>
@@ -1119,7 +1159,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="dsp_apb_0.apb_slave_if">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0070" />
+  <parameter name="baseAddress" value="0x1030" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1137,7 +1177,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="fpga_data_source_0.avalon_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0060" />
+  <parameter name="baseAddress" value="0x1020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1146,7 +1186,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="fpga_data_sink_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0050" />
+  <parameter name="baseAddress" value="0x1010" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1164,7 +1204,7 @@
    start="hps_0.h2f_lw_axi_master"
    end="dipsw_pio.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0040" />
+  <parameter name="baseAddress" value="0x1000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection

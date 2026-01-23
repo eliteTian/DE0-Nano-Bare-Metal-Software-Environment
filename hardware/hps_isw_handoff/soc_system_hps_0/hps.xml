@@ -1,7 +1,7 @@
 <hps>
   <system>
     <config name='DEVICE_FAMILY' value='Cyclone V' />
-    <config name='DMA_Enable' value='No No No No No No No No' />
+    <config name='DMA_Enable' value='Yes No No No No No No No' />
     <config name='dbctrl_stayosc1' value='true' />
     <config name='main_pll_m' value='73' />
     <config name='main_pll_n' value='0' />
