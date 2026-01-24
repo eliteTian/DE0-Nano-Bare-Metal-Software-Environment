@@ -396,28 +396,83 @@ reg [3:0]               arcache;
 reg [2:0]               arprot;
 reg [AWUSER_WIDTH-1:0]  aruser;
 reg [1:0]               arlock;
-reg                     arready;
+wire                    arready;
 wire                    arvalid = axi_arvalid;
 
+
+wire [ID_WIDTH-1:0]     bottom_arid;
+wire [ADDR_WIDTH-1:0]   bottom_araddr;
+wire [3:0]              bottom_arlen;
+wire [2:0]              bottom_arsize;
+wire [1:0]              bottom_arburst;
+wire                    bottom_arvalid;
+//ADDR_WIDTH == 12
+wire [31-ADDR_WIDTH:0]  rsv_addr_lhsv;
+wire [31-ADDR_WIDTH:0]  rsv_addr_rhsv;
+
 //AR state machine
+assign arready = ~ar_slot0[0]; //as long as the last slot is not occupied, can accept cmd
+
+reg[63:0]   ar_slot0;
+reg[63:0]   ar_slot1;
+reg[63:0]   ar_slot2;
+reg[63:0]   ar_slot3;
+
+wire[63:0] ar_cmd = { axi_araddr, rsv_addr_rhsv, //32bit
+                      axi_arlen, 1'b0, axi_arsize,      //8bit
+                      axi_arburst,6'h0, //2bit
+                      axi_arid, 1'b0, axi_arvalid};  //16bit
+
+wire ar_push = arvalid & arready;
+wire ar_cmd_avail = ar_slot0[0] | ar_slot1[0] | ar_slot2[0] | ar_slot3[0];
+
 always@(posedge clk, posedge rst) begin
     if(rst) begin
-        arready <= 1'b0;
-        arsize  <= 0;
-        arburst <= 0;
-        arid    <= 0;
+        ar_slot0 <=0; 
+        ar_slot1 <=0;
+        ar_slot2 <=0;
+        ar_slot3 <=0;
     end else begin
-        if(arvalid && ~read_pending) begin //arvalid always asserts first
-            arready <= 1'b1;
-            arsize  <= axi_arsize;
-            arburst <= axi_arburst;
-        end else begin
-            arready <= 1'b0;
+        if(ar_pull) begin
+            if(ar_slot0[0]) begin
+                ar_slot0 <= 0;
+            end else if(ar_slot1[0]) begin
+                ar_slot1 <= 0;
+            end else if(ar_slot2[0]) begin
+                ar_slot2 <= 0;
+            end else if(ar_slot3[0]) begin
+                ar_slot3 <= 0;
+            end
         end
-
+        
+        if(ar_push) begin
+            ar_slot0 <= ar_slot1;
+            ar_slot1 <= ar_slot2;
+            ar_slot2 <= ar_slot3;
+            ar_slot3 <= ar_cmd;
+        end
+        
     end
 end
 
+wire[63:0] ar_cmd_to_process = ar_slot0[0]? ar_slot0:
+                               ar_slot1[0]? ar_slot1:
+                               ar_slot2[0]? ar_slot2:
+                               ar_slot3[0]? ar_slot3: 0;
+wire [4:0] rsv5;
+wire [5:0] rsv6;
+wire       rsv1;
+wire       rsv1_0;
+
+//wire[63:0] ar_cmd = { axi_araddr, rsv_addr_rhsv //32bit
+//                      axi_arlen, 1'b0, axi_arsize      //8bit
+//                      axi_arburst,6'h0, //2bit
+//                      axi_arid, 1'b0, axi_arvalid};  //16bit
+
+assign  {bottom_araddr, rsv_addr_lhsv,                     //32bit
+         bottom_arlen,rsv1_0, bottom_arsize,               //8bit
+         bottom_arburst, rsv6,                             //2bit
+         bottom_arid, rsv1, bottom_arvalid} = ar_cmd_to_process;
 
 //storage space
 reg[31:0]  axi_mem[0:2**(ADDR_WIDTH-3)-1]; //each is a word, not a bite.
@@ -426,14 +481,15 @@ reg[31:0]  axi_mem[0:2**(ADDR_WIDTH-3)-1]; //each is a word, not a bite.
 wire[ADDR_WIDTH-3:0] rd_ram_index = araddr[ADDR_WIDTH-1:2];
 assign rdata = rvalid? axi_mem[rd_ram_index]:0;
 
-wire [DATA_WIDTH-1:0]  rdata;
-reg [STRB_WIDTH-1:0]  rstrb;
+wire [DATA_WIDTH-1:0]   rdata;
+reg [STRB_WIDTH-1:0]    rstrb;
 reg                     rlast;
 reg                     rvalid;
 reg [ID_WIDTH-1:0]      rid;
 reg [1:0]               rresp;
 wire                    rready = axi_rready;
 reg                     read_pending;
+reg                     ar_pull;
 
 //R state machine
 always@(posedge clk, posedge rst) begin
@@ -443,28 +499,30 @@ always@(posedge clk, posedge rst) begin
         rlast        <= 1'b0;
         rvalid       <= 1'b0;
         read_pending <= 1'b0;
-        arlen   <= 0;        
-        araddr  <= 0;
+        arlen        <= 0;        
+        araddr       <= 0;
 
     end else begin
         if(~read_pending) begin
             rlast <= 1'b0;
             rvalid <= 1'b0;
-            
-            if(arvalid && arready) begin //update araddr/ arlen
-                araddr  <= axi_araddr;
-                rid     <= axi_arid;
-                if(axi_arlen==0) begin
+            ar_pull <= 1'b0;            
+            if(ar_cmd_avail && ~ar_pull) begin //update araddr/ arlen
+                ar_pull <= 1'b1;
+                araddr  <= bottom_araddr;
+                rid     <= bottom_arid;
+                if(bottom_arlen==0) begin
                     rvalid <= 1'b1;
                     rlast  <= 1'b1;
                 end else begin
                     read_pending <= 1'b1;
                     rvalid <= 1'b1;
-                    arlen <= axi_arlen-1;
+                    arlen <= bottom_arlen-1;
 
                 end
             end
         end else begin
+            ar_pull <= 1'b0;            
             if(arlen!=0) begin
                 if(rready) begin
                     arlen <= arlen - 1;

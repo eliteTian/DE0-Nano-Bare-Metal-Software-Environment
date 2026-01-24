@@ -18,4 +18,5 @@ hardware/incremental_db/
 *.log
 screenlog.0
 *.reg
+*.rbf
 
