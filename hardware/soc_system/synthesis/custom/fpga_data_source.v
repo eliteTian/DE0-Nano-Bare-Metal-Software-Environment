@@ -84,6 +84,10 @@ module fpga_data_source # (
   
 );
 
+parameter  FIFO_DEPTH = 128;
+parameter  PTR_WIDTH = $clog2(FIFO_DEPTH);
+
+
 wire              clk_en;
 reg [31:0]          CTRL, STAT, DMA_CTRL;
 wire[31:0]          dbg_reg;
@@ -275,7 +279,7 @@ reg [3:0]               awcache;
 reg [2:0]               awprot;
 reg [AWUSER_WIDTH-1:0]  awuser;
 reg [1:0]               awlock;
-reg                     awready;
+wire                    awready;
 reg                     awinfo_acquired;
 wire [31:0]             awinfo = {awsize,awaddr,awlen,awburst};
 wire                    awvalid = axi_awvalid;
@@ -287,34 +291,84 @@ wire                    awvalid = axi_awvalid;
 //access this region. Incremental burst just fills up the buffer. so a
 //last written address is needed. Either way, wchannel computes axi_addr;
 //AW state machine
-//
-//
+assign awready = ~aw_slot0[0]; //as long as the last slot is not occupied, can accept cmd
+
+reg[63:0]   aw_slot0;
+reg[63:0]   aw_slot1;
+reg[63:0]   aw_slot2;
+reg[63:0]   aw_slot3;
+wire [31-ADDR_WIDTH:0]  rsv_addr_lhsv_aw;
+wire [31-ADDR_WIDTH:0]  rsv_addr_rhsv_aw;
+
+wire[63:0] aw_cmd = { axi_awaddr, rsv_addr_rhsv_aw, //32bit
+                      axi_awlen, 1'b0, axi_awsize,      //8bit
+                      axi_awburst,6'h0, //2bit
+                      axi_awid, 1'b0, axi_awvalid};  //16bit
+                  
+                  
+
+wire aw_push = awvalid & awready;
+wire aw_cmd_avail = aw_slot0[0] | aw_slot1[0] | aw_slot2[0] | aw_slot3[0];
+reg  aw_pull;
 always@(posedge clk, posedge rst) begin
     if(rst) begin
-        awready <= 1'b0;
-        awaddr  <= 0;
-        awlen   <= 0;
-        awsize  <= 0;
-        awburst <= 0;
-        awid   <= 0;
+        aw_slot0 <=0; 
+        aw_slot1 <=0;
+        aw_slot2 <=0;
+        aw_slot3 <=0;
     end else begin
-        if(awvalid && wvalid && ~awready && ~wready) begin //awvalid always asserts first
-            awaddr  <= axi_awaddr;
-            awlen   <= axi_awlen;
-            awsize  <= axi_awsize;
-            awburst <= axi_awburst;
-            awid    <= axi_awid;
-            awready <= 1'b1;
-        end else begin
-            awready <= 1'b0;
+        if(aw_pull) begin
+            if(aw_slot0[0]) begin
+                aw_slot0 <= 0;
+            end else if(aw_slot1[0]) begin
+                aw_slot1 <= 0;
+            end else if(aw_slot2[0]) begin
+                aw_slot2 <= 0;
+            end else if(aw_slot3[0]) begin
+                aw_slot3 <= 0;
+            end
         end
+        if(aw_push) begin
+            aw_slot0 <= aw_slot1;
+            aw_slot1 <= aw_slot2;
+            aw_slot2 <= aw_slot3;
+            aw_slot3 <= aw_cmd;
+        end 
     end
 end
-wire [DATA_WIDTH-1:0]  wdata = axi_wdata;
-wire [STRB_WIDTH-1:0]  wstrb =axi_wstrb;
+
+wire[63:0] aw_cmd_to_process = aw_slot0[0]? aw_slot0:
+                               aw_slot1[0]? aw_slot1:
+                               aw_slot2[0]? aw_slot2:
+                               aw_slot3[0]? aw_slot3: 0;
+wire [4:0] rsv5_aw;
+wire [5:0] rsv6_aw;
+wire       rsv1_aw;
+wire       rsv1_aw_0;
+
+wire [ID_WIDTH-1:0]     bottom_awid;
+wire [ADDR_WIDTH-1:0]   bottom_awaddr;
+wire [3:0]              bottom_awlen;
+wire [2:0]              bottom_awsize;
+wire [1:0]              bottom_awburst;
+wire                    bottom_awvalid;
+
+
+
+assign  {bottom_awaddr, rsv_addr_lhsv_aw,                     //32bit
+         bottom_awlen,rsv1_aw, bottom_awsize,               //8bit
+         bottom_awburst, rsv6_aw,                             //2bit
+         bottom_awid, rsv1_aw_0, bottom_arvalid} = aw_cmd_to_process;
+
+
+
+
+
+wire [DATA_WIDTH-1:0]   wdata = axi_wdata;
+wire [STRB_WIDTH-1:0]   wstrb =axi_wstrb;
 wire                    wlast = axi_wlast;
 wire                    wvalid = axi_wvalid ;
-reg                     wready;
+wire                    wready;
 reg [ID_WIDTH-1:0]      wid;
 
 reg[ADDR_WIDTH -1:0] wr_addr;
@@ -328,33 +382,91 @@ generate
 endgenerate
 
 wire[ADDR_WIDTH-3:0] ram_index = wr_addr[ADDR_WIDTH-1:2];
+
 //W state machine
 reg write_pending;
-always@(posedge clk, posedge rst) begin
-    if(rst) begin
-        w_state <= 2'b00;
-        wready <= 1'b0;
-        wid   <= 0;
-        wr_addr <= 0;
-        write_pending <= 1'b0;
-    end else begin
-        if(awvalid && wvalid && ~awready && ~write_pending) begin //new AW addr update cycle.next cycle awready asserts
-            wr_addr <= axi_awaddr; 
-            wready <= 1'b1;
-            write_pending <= 1'b1;
-        end else if(wvalid & write_pending) begin // If not aw addr update cycle, take data when wvalid.
-            if(wlast) begin
-                axi_mem[ram_index] <= wdata & wr_mask;
-                wready <= 1'b0;
-                write_pending <= 1'b0;
-            end else begin
-                axi_mem[ram_index] <= wdata & wr_mask ;            
-                wr_addr <= wr_addr + 4;
-            end
-        end
-        
+reg[DATA_WIDTH-1:0]     fifo[0:FIFO_DEPTH-1];
+reg[PTR_WIDTH:0]        wrptr, rdptr; //one extra bit to show status
+wire[PTR_WIDTH:0]       wrptr_next = wrptr+1;
+wire                     wr_fifo;
+reg                      rd_fifo;
+
+reg[2:0]                frame_num; //how many frames are in fifo
+always@(posedge clk) begin
+    if(wr_fifo) begin
+        fifo[wrptr[PTR_WIDTH-1:0]] <= wdata_fifo;
     end
 end
+
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
+        wrptr <= 0;
+        rdptr <= 0;
+        frame_num <= 0;
+    end else begin
+        wrptr       <= wrptr+wr_fifo;
+        rdptr       <= rdptr+rd_fifo;
+        frame_num   <= wlast? frame_num + 1 : frame_num;
+    end
+end
+wire afull = wrptr_next[PTR_WIDTH-1:0]==rdptr[PTR_WIDTH-1:0] && wrptr_next[PTR_WIDTH]^rdptr[PTR_WIDTH];
+wire full  = wrptr[PTR_WIDTH-1:0]==rdptr[PTR_WIDTH-1:0] && wrptr[PTR_WIDTH]^rdptr[PTR_WIDTH];
+wire empty = wrptr == rdptr;
+
+assign wready       = ~afull;
+assign wr_fifo      = wvalid && wready;
+wire[31:0] wdata_fifo   = wdata & wr_mask;
+wire[31:0] rdata_fifo   = fifo[rdptr[PTR_WIDTH-1:0]];
+//Write machine
+reg         write_done;
+
+always@(posedge clk, posedge rst) begin
+    if(rst) begin
+        wid           <= 0;
+        write_pending <= 1'b0;
+        aw_pull       <= 1'b0;
+        awlen         <= 0;
+        rd_fifo       <= 0;
+        wr_addr       <= 0;
+        awid          <= 0;
+        write_done    <= 1'b0;
+    end else begin
+        if(~write_pending) begin
+            rd_fifo <= 1'b0;
+            aw_pull <= 1'b0;
+            write_done <= 1'b0;
+            if(aw_cmd_avail && ~aw_pull) begin //update awaddr/ awlen
+                aw_pull <= 1'b1;
+                wr_addr  <= bottom_awaddr;
+                wid      <= bottom_awid; //axi3 needs
+                awlen    <= bottom_awlen;
+                awid     <= bottom_awid;
+                write_pending <= 1'b1;
+                rd_fifo <= ~empty; // only read when fifo not empty, rd_fifo is clearing old data
+            end
+        end else begin
+            aw_pull <= 1'b0;
+            if(awlen!=0) begin //multiple burst
+                if(rd_fifo) begin //rdata available 
+                    axi_mem[ram_index] <= rdata_fifo ;
+                    rd_fifo <= ~empty; //as long as fifo not empty, read so that first data fall through.
+                    wr_addr <= wr_addr + 4;
+                    awlen <= awlen - 1;     
+                end
+            end else begin //single burst//end burst
+                if(rd_fifo) begin //rdata available 
+                    axi_mem[ram_index] <= rdata_fifo ;
+                    rd_fifo <= ~empty; //as long as fifo not empty, read so that first data fall through.
+                    write_pending <= 0;
+                    rd_fifo <= 1'b0;
+                    write_done <= 1'b1;
+                end
+            end
+       end
+    end
+end
+
+
 
 
 
@@ -363,7 +475,7 @@ reg [ID_WIDTH-1:0]      bid;
 reg [1:0]               bresp;
 reg                     bvalid;
 wire                    bready = axi_bready;
-
+reg                     wait_handshake;
 //B state machine
 always@(posedge clk, posedge rst) begin
     if(rst) begin
@@ -371,21 +483,27 @@ always@(posedge clk, posedge rst) begin
         bvalid <= 1'b0;
         bresp  <= 0;
         b_state <= 0;
+        wait_handshake <= 0;
     end else begin
-        if(wlast&wready&wvalid) begin // finish condition
-            if(bready&&bvalid) begin //when handshake happens, can deassert bvalid
-                bvalid <= 1'b0; //assert bvalid regardless of bready
-            end else begin //assert first and check handshake
+        //if(wlast&wready&wvalid) begin // finish condition
+        if(~wait_handshake) begin
+            if(write_done) begin
+                wait_handshake <= 1'b1;
                 bvalid <= 1'b1;
+                bresp <= 0;
+                bid <= awid;
             end
-            bresp <= 0;
-            bid <= awid;
-        end else begin 
-            bvalid <= 1'b0;
+        end else begin
+            if(bready) begin
+                wait_handshake <= 1'b0;
+                bvalid <= 1'b0;
+            end
         end
-
+       
     end
 end
+
+
 
 reg [ID_WIDTH-1:0]      arid;
 reg [ADDR_WIDTH-1:0]    araddr;

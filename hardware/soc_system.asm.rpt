@@ -1,5 +1,5 @@
 Assembler report for soc_system
-Fri Jan 23 16:58:06 2026
+Sat Jan 24 17:19:03 2026
 Quartus Prime Version 17.0.0 Build 595 04/25/2017 SJ Lite Edition
 
 
@@ -39,7 +39,7 @@ agreement for further details.
 +---------------------------------------------------------------+
 ; Assembler Summary                                             ;
 +-----------------------+---------------------------------------+
-; Assembler Status      ; Successful - Fri Jan 23 16:58:06 2026 ;
+; Assembler Status      ; Successful - Sat Jan 24 17:19:03 2026 ;
 ; Revision Name         ; soc_system                            ;
 ; Top-level Entity Name ; ghrd                                  ;
 ; Family                ; Cyclone V                             ;
@@ -78,8 +78,8 @@ agreement for further details.
 +----------------+-------------------------+
 ; Option         ; Setting                 ;
 +----------------+-------------------------+
-; JTAG usercode  ; 0x02654124              ;
-; Checksum       ; 0x02654124              ;
+; JTAG usercode  ; 0x026EA598              ;
+; Checksum       ; 0x026EA598              ;
 +----------------+-------------------------+
 
 
@@ -89,14 +89,14 @@ agreement for further details.
 Info: *******************************************************************
 Info: Running Quartus Prime Assembler
     Info: Version 17.0.0 Build 595 04/25/2017 SJ Lite Edition
-    Info: Processing started: Fri Jan 23 16:57:59 2026
+    Info: Processing started: Sat Jan 24 17:18:56 2026
 Info: Command: quartus_asm --read_settings_files=off --write_settings_files=off soc_system -c soc_system
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (115030): Assembler is generating device programming files
 Info (11878): Hard Processor Subsystem configuration has not changed and a Preloader software update is not required
 Info: Quartus Prime Assembler was successful. 0 errors, 1 warning
-    Info: Peak virtual memory: 1060 megabytes
-    Info: Processing ended: Fri Jan 23 16:58:06 2026
+    Info: Peak virtual memory: 1063 megabytes
+    Info: Processing ended: Sat Jan 24 17:19:03 2026
     Info: Elapsed time: 00:00:07
     Info: Total CPU time (on all processors): 00:00:07
 

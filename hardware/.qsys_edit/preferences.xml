@@ -9,7 +9,7 @@
    <name preferredWidth="380" />
   </columns>
  </systemtable>
- <library expandedCategories="Project,Project/custom logic,Library" />
+ <library expandedCategories="Library,Project,Project/custom logic" />
  <window width="1930" height="1059" x="1915" y="-5" />
  <hdlexample language="VERILOG" />
  <generation block_symbol_file="0" />

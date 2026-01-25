@@ -517,11 +517,11 @@ void axiTest() {
     wdata = 0x931ab6f0;
     bool err_flag = 0;
     readAXISpace(offset, &rdata); 
-    writeAXISpace(offset, wdata);  
-    
+    printf("AXI read result before write: 0x%08x\r\n", rdata );    
+    writeAXISpace(offset, wdata); 
     readAXISpace(offset, &rdata);
+    printf("AXI read result after write: 0x%08x\r\n", rdata );
     //writeAXISpace(offset, wdata);    
-    printf("AXI test: 0x%08x\r\n", rdata );
     for(offset=0;offset<4096;offset=offset+4) {
         wdata = rand() % MAX_DATA; //generate a random value between 0 - 2**32
         writeAXISpace(offset, wdata);
