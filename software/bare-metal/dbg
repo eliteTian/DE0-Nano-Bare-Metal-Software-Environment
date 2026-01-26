@@ -1,0 +1,30 @@
+
+[Hufei]:DMA Channel initial state is: 0 = 0
+INFO: Demo DMA memory to FPGA transfer.
+TEST AXI interface
+AXI read result before write: 0x00000000
+AXI read result after write: 0x931ab6f0
+AXI DMA STATUS after request issued: 0x00000001
+AXI test success
+INFO: Copying from 0x0012f648 to FPGA size = 1 bytes.
+DMA[M->P]: Init Program.
+DMA[M->P][FPGA custom]: Create 1 custom write(s) [first = true].
+DMA[M->P][FPGA custom][S]: Creating 1 single-type transfer(s).
+DMA[M->P][FPGA custom][S]: Loop construction done of 0 single-type transfer(s).
+DMA[M->P]: Executing program on given channel.
+DEBUG[cache][va->pa]: pa[page] = 0x10ff000; offset = 0xde0.
+DMA[exec]: program = 0x10ffde0 (PA).
+[Hufei]:DMA Channel after configuring state is: 0 = 0
+INFO: Waiting for DMA transfer to complete.
+AXI read result after DMA write: 0x0000008e
+INFO: Demo DMA memory to memory succeeded.
+
+INFO: System shutdown.
+
+RESULT: All tests successful.
+TEST AXI interface
+AXI read result before write: 0x0000008e
+AXI read result after write: 0x931ab6f0
+AXI DMA STATUS after request issued: 0x00000001
+AXI test success
+

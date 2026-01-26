@@ -76,7 +76,7 @@ module fpga_data_source # (
   input  wire [1:0]               axi_arlock,
 
   output wire [ID_WIDTH-1:0]      axi_rid,
-  output wire [DATA_WIDTH-1:0]  axi_rdata,
+  output wire [DATA_WIDTH-1:0]    axi_rdata,
   output wire [1:0]               axi_rresp,
   output wire                     axi_rlast,
   output wire                     axi_rvalid,
@@ -101,6 +101,11 @@ wire        cmd_clear_cnt = CTRL[31];
 
 wire        pend    = STAT[0];
 
+assign    dma_single = 1'b1; 
+reg       dma_req_reg;
+      
+assign    dma_req = DMA_CTRL[0];
+
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -122,10 +127,13 @@ always @(posedge clk or posedge rst) begin
             if(cmd_clear_cnt) begin //clear bit 31, cmd_clear_cnt by HW
                 CTRL <= CTRL & 32'hEFFFFFFF;
             end
+            if(dma_ack) begin
+                DMA_CTRL[0] <= 1'b0;
+            end
         end
     end
 
-  end
+end
 
 assign  avs_readdata =  avs_address==2'b00 ? CTRL: 
                         avs_address==2'b01 ? STAT:

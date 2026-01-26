@@ -16,10 +16,10 @@
 #include "fpga_dsp.h"
 #include "alt_cache.h"
 
-#define DEBUG_ALT_DMA
+
 #define FPGA_TEST
 //#define ETH_TEST
-//#define DMA_TEST
+#define DMA_TEST
 //#define PERIPH_TEST
 #define FRAM_BUF_SIZE 384
 extern UART_INFO_t term0_info;

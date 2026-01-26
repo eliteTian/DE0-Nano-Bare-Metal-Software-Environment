@@ -157,13 +157,15 @@ void waitStatusComplete(void) {
 
 }
 
-void writeGPRSource(uint32_t data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_GPR_OFST);
-    *reg_addr = data;
+void issueDMAReq(void){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_DMA_OFST);
+    uint32_t reg_val = 0;
+    reg_val |= SRC_DMA_REQ;
+    *reg_addr = reg_val;
 }
 
-void readGPRSource(uint32_t* data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_GPR_OFST);
+void readDMAStat(uint32_t* data){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_DMA_OFST);
     *data = *reg_addr;
 }
 
@@ -186,15 +188,7 @@ void readDbgSource(uint32_t* data){
 }
 
 
-void writeGPRSink(uint32_t data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_GPR_OFST);
-    *reg_addr = data;
-}
 
-void readGPRSink(uint32_t* data){
-    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_GPR_OFST);
-    *data = *reg_addr;
-}
 
 void readDbgSink(uint32_t* data){
     volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SINK_0_BASE+SRC_DBG_OFST);
@@ -237,18 +231,6 @@ void readGPRDSP(uint32_t* data){
 
 void gprTest(void) {
     uint32_t gpr;
-    readGPRSource(&gpr);
-    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
-    writeGPRSource(0x26571489);
-    readGPRSource(&gpr);
-    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
-
-    readGPRSink(&gpr);
-    printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
-    writeGPRSink(0x26571489);
-    readGPRSink(&gpr);
-    printf("General Purpose Register is after writing : 0x%08x\r\n", gpr );
-
     readGPRDSP(&gpr);
     printf("General Purpose Register is before writing : 0x%08x\r\n", gpr );    
     writeGPRDSP(0x26571489);
@@ -508,7 +490,6 @@ void ethSinLoop(uint8_t* eth_src, uint8_t* eth_ret, uint32_t len) {
 }
 
 void axiTest() {
-    gprTest();
     printf("TEST AXI interface\r\n");
     uint32_t wdata;
     uint32_t rdata;
@@ -516,12 +497,17 @@ void axiTest() {
     offset = 0;
     wdata = 0x931ab6f0;
     bool err_flag = 0;
+    issueDMAReq();
+    
     readAXISpace(offset, &rdata); 
     printf("AXI read result before write: 0x%08x\r\n", rdata );    
     writeAXISpace(offset, wdata); 
     readAXISpace(offset, &rdata);
     printf("AXI read result after write: 0x%08x\r\n", rdata );
     //writeAXISpace(offset, wdata);    
+    readDMAStat(&rdata);
+    printf("AXI DMA STATUS after request issued: 0x%08x\r\n", rdata );
+
     for(offset=0;offset<4096;offset=offset+4) {
         wdata = rand() % MAX_DATA; //generate a random value between 0 - 2**32
         writeAXISpace(offset, wdata);
@@ -536,9 +522,9 @@ void axiTest() {
 
     }  
     if(err_flag) {
-        printf("AXI test fail");
+        printf("AXI test fail\r\n");
     } else {
-        printf("AXI test success");
+        printf("AXI test success\r\n");
     }
 
 

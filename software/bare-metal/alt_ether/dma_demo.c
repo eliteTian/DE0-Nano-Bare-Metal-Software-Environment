@@ -39,6 +39,8 @@
 #include "socal/socal.h"
 #include "alt_printf.h"
 #include "alt_p2uart.h"
+#include "fpga_dsp.h"
+#include "hps_0.h"
 
 // Determine the minimum of two values
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
@@ -52,6 +54,7 @@
 // Buffers used for testing
 uint8_t Write_Buffer[MAX_TEST_BYTES];
 uint8_t Read_Buffer[MAX_TEST_BYTES];
+uint32_t axi_buffer[2] = { 0x967f858e, 0x3f3e6a9b};
 
 // DMA channel to be used
 ALT_DMA_CHANNEL_t Dma_Channel;
@@ -128,6 +131,7 @@ ALT_STATUS_CODE system_init(void)
     {
         ALT_PRINTF("INFO: Allocating DMA channel.\n");
         status = alt_dma_channel_alloc_any(&Dma_Channel);
+        ALT_PRINTF("INFO: Allocated DMA channel:%d\n",(int)Dma_Channel);
     }
 
     // Initialize random number generator
@@ -318,6 +322,96 @@ ALT_STATUS_CODE dma_demo_zero_to_memory(void * dst, uint32_t size)
     return status;
 }
 
+/******************************************************************************/
+/*!
+ * Demo memory to periph transfer
+ *
+ * \param src         [in]  Input buffer
+ * \param periph_info [in] periph address info
+ * \param dst         [out] Output buffer
+ * \param size        [in]  Data size
+ * \return            result of the function
+ */
+ALT_STATUS_CODE dma_demo_memory_to_fpga(void * src, void * periph_info, uint32_t size)
+{
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+    ALT_DMA_PROGRAM_t program;
+    uint32_t rdata;
+    uint32_t offset = 0;
+
+    ALT_DMA_CHANNEL_STATE_t channel_state = ALT_DMA_CHANNEL_STATE_EXECUTING;
+    status = alt_dma_channel_state_get(Dma_Channel, &channel_state);
+    ALT_PRINTF("[Hufei]:DMA Channel initial state is: %d = %d\n", Dma_Channel,channel_state);
+  
+
+    ALT_DMA_PERIPH_t dstp = ALT_DMA_PERIPH_FPGA_0;
+    ALT_PRINTF("INFO: Demo DMA memory to FPGA transfer.\n");
+    //ALT_STATUS_CODE alt_dma_memory_to_periph(ALT_DMA_CHANNEL_t channel,
+    //                                         ALT_DMA_PROGRAM_t * program,
+    //                                         ALT_DMA_PERIPH_t dstp,
+    //                                         const void * src,
+    //                                         size_t size,
+    //                                         void * periph_info,
+    //                                         bool send_evt,
+    //                                         ALT_DMA_EVENT_t evt)
+    // Copy source buffer over destination buffer
+    axiTest();
+    if(status == ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("INFO: Copying from 0x%08x to FPGA size = %d bytes.\n", (int)src, (int)size);
+        status = alt_dma_memory_to_periph(Dma_Channel, &program, dstp, src, size, periph_info, false, (ALT_DMA_EVENT_t)0);
+    }
+    status = alt_dma_channel_state_get(Dma_Channel, &channel_state);
+    ALT_PRINTF("[Hufei]:DMA Channel after configuring state is: %d = %d\n", Dma_Channel,channel_state);
+    // Wait for transfer to complete
+    if (status == ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("INFO: Waiting for DMA transfer to complete.\n");
+        ALT_DMA_CHANNEL_STATE_t channel_state = ALT_DMA_CHANNEL_STATE_EXECUTING;
+        while((status == ALT_E_SUCCESS) && (channel_state != ALT_DMA_CHANNEL_STATE_STOPPED))
+        {
+            status = alt_dma_channel_state_get(Dma_Channel, &channel_state);
+            if(channel_state == ALT_DMA_CHANNEL_STATE_FAULTING)
+            {
+                ALT_DMA_CHANNEL_FAULT_t fault;
+                 alt_dma_channel_fault_status_get(Dma_Channel, &fault);
+                 ALT_PRINTF("ERROR: DMA CHannel Fault: %d\n", (int)fault);
+                 status = ALT_E_ERROR;
+            }
+        }
+    }
+
+    readAXISpace(offset,&rdata);
+    printf("AXI read result after DMA write: 0x%08x\r\n", rdata );
+    readAXISpace(offset+4,&rdata);
+    printf("AXI read result after DMA write: 0x%08x\r\n", rdata );
+
+    // Compare results
+    //if(status == ALT_E_SUCCESS)
+    //{
+    //    ALT_PRINTF("INFO: Comparing source and destination buffers.\n");
+    //    if(0  != memcmp(src, dst, size))
+    //    {
+    //        status = ALT_E_ERROR;
+    //    }
+    //}
+
+    // Display result
+    if(status == ALT_E_SUCCESS)
+    {
+        ALT_PRINTF("INFO: Demo DMA memory to memory succeeded.\n");
+    }
+    else
+    {
+        ALT_PRINTF("ERROR: Demo DMA memory to memory failed.\n");
+    }
+
+    ALT_PRINTF("\n");
+
+    return status;
+}
+
+
 
 /******************************************************************************/
 /*!
@@ -337,24 +431,34 @@ int dma_main(void)
 
 
     // Demo memory to memory DMA transfers
+    //if(status == ALT_E_SUCCESS)
+    //{
+    //    uint32_t src_offs;
+    //    uint32_t dst_offs;
+    //    uint32_t size;
+    //    generate_test_data(&src_offs, &dst_offs, &size);
+    //    status = dma_demo_memory_to_memory(&Write_Buffer[src_offs], &Read_Buffer[dst_offs], size);
+    //}
+
+    //// Demo zero to memory DMA transfers
+    //if(status == ALT_E_SUCCESS)
+    //{
+    //    uint32_t src_offs;
+    //    uint32_t dst_offs;
+    //    uint32_t size;
+    //    generate_test_data(&src_offs, &dst_offs, &size);
+    //    status = dma_demo_zero_to_memory(&Read_Buffer[dst_offs], size);
+    //}
     if(status == ALT_E_SUCCESS)
     {
-        uint32_t src_offs;
-        uint32_t dst_offs;
-        uint32_t size;
-        generate_test_data(&src_offs, &dst_offs, &size);
-        status = dma_demo_memory_to_memory(&Write_Buffer[src_offs], &Read_Buffer[dst_offs], size);
+        FPGA_DSP_t dsp_buff;
+        dsp_buff.location = (void*)ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_BASE;
+        dsp_buff.offset = 0;
+        uint32_t size = 2 ;
+        status = dma_demo_memory_to_fpga(&axi_buffer, &dsp_buff, size);
     }
 
-    // Demo zero to memory DMA transfers
-    if(status == ALT_E_SUCCESS)
-    {
-        uint32_t src_offs;
-        uint32_t dst_offs;
-        uint32_t size;
-        generate_test_data(&src_offs, &dst_offs, &size);
-        status = dma_demo_zero_to_memory(&Read_Buffer[dst_offs], size);
-    }
+    
 
     // System uninit
     if(status == ALT_E_SUCCESS)

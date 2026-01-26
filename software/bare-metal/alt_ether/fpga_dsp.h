@@ -32,7 +32,9 @@
 #define  SRC_STATUS_PEND_OFST           0
 #define  SRC_STATUS_RDATA_OFST          8
 
-#define  SRC_GPR_OFST                   0x8
+#define  SRC_DMA_OFST                   0x8
+#define  SRC_DMA_REQ                    0x1<<0
+
 #define  SRC_DBG_OFST                   0xC
 
 #define  DSP_CTRL_OFST                  0x0
@@ -52,23 +54,27 @@
 
 #define  MAX_DATA                       0xFFFFFFFFUL
 typedef struct FPGA_DSP_s {
-    void *                  location;    /*!< HPS address of I2C instance. */
+    void *                  location;   
+    uint32_t                offset;
 }
 FPGA_DSP_t;
 
 
+
 void writeRamSource(uint16_t addr, uint8_t data);
 void readRamSource(uint16_t addr, uint8_t* rdata);
-void writeGPRSource(uint32_t data);
-void readGPRSource(uint32_t* data);
+
+void issueDMAReq();
+void readDMAStat(uint32_t* data);
+
 void dumpRamSource(void);
 void readDbgSource(uint32_t* data);
 
 
 void writeRamSink(uint16_t addr, uint8_t data);
 void readRamSink(uint16_t addr, uint8_t* rdata);
-void writeGPRSink(uint32_t data);
-void readGPRSink(uint32_t* data);
+//void writeGPRSink(uint32_t data);
+//void readGPRSink(uint32_t* data);
 void setSinkForDump(void);
 void readDbgSink(uint32_t* data);
 
