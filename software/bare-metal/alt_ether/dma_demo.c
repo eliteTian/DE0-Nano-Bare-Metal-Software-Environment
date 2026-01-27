@@ -54,7 +54,8 @@
 // Buffers used for testing
 uint8_t Write_Buffer[MAX_TEST_BYTES];
 uint8_t Read_Buffer[MAX_TEST_BYTES];
-uint32_t axi_buffer[2] = { 0x967f858e, 0x3f3e6a9b};
+
+uint32_t axi_buffer[384] = { 0x95653525, 0x97842561};
 
 // DMA channel to be used
 ALT_DMA_CHANNEL_t Dma_Channel;
@@ -362,7 +363,7 @@ ALT_STATUS_CODE dma_demo_memory_to_fpga(void * src, void * periph_info, uint32_t
         status = alt_dma_memory_to_periph(Dma_Channel, &program, dstp, src, size, periph_info, false, (ALT_DMA_EVENT_t)0);
     }
     status = alt_dma_channel_state_get(Dma_Channel, &channel_state);
-    ALT_PRINTF("[Hufei]:DMA Channel after configuring state is: %d = %d\n", Dma_Channel,channel_state);
+    ALT_PRINTF("[Hufei]:DMA Channel after execution state is: %d = %d\n", Dma_Channel,channel_state);
     // Wait for transfer to complete
     if (status == ALT_E_SUCCESS)
     {
@@ -380,12 +381,14 @@ ALT_STATUS_CODE dma_demo_memory_to_fpga(void * src, void * periph_info, uint32_t
             }
         }
     }
-
-    readAXISpace(offset,&rdata);
-    printf("AXI read result after DMA write: 0x%08x\r\n", rdata );
-    readAXISpace(offset+4,&rdata);
-    printf("AXI read result after DMA write: 0x%08x\r\n", rdata );
-
+    ALT_PRINTF("[Hufei]:DMA Channel Final Check of state is: %d = %d\n", Dma_Channel,channel_state);
+    for(size_t i = 0; i!=size; i++) {
+        readAXISpace(offset+i*4,&rdata);
+        printf("AXI read result after DMA write: 0x%08x\r\n", rdata );
+        //readAXISpace(offset+4,&rdata);
+        //printf("AXI read result after DMA write: 0x%08x\r\n", rdata );
+    }
+    ALT_PRINTF("[Hufei]:DMA Channel Ultimate Check of state is: %d = %d\n", Dma_Channel,channel_state);
     // Compare results
     //if(status == ALT_E_SUCCESS)
     //{
@@ -454,7 +457,11 @@ int dma_main(void)
         FPGA_DSP_t dsp_buff;
         dsp_buff.location = (void*)ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_ALTERA_AXI_SLAVE_BASE;
         dsp_buff.offset = 0;
-        uint32_t size = 2 ;
+        uint32_t size = sizeof(axi_buffer) / sizeof(axi_buffer[0]) ;
+        for(size_t i=0;i!= size; i++) {
+            axi_buffer[i] = i;
+        }
+
         status = dma_demo_memory_to_fpga(&axi_buffer, &dsp_buff, size);
     }
 

@@ -5540,7 +5540,7 @@ static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program
                                           | ALT_DMA_CCR_OPT_SB1        //buffer is 512Byte, so use SB16 for efficiency
                                           | ALT_DMA_CCR_OPT_SP_DEFAULT
                                           | ALT_DMA_CCR_OPT_SC(7)
-                                          | ALT_DMA_CCR_OPT_DAF         //Fixed key hole register that funnels into fifo.
+                                          | ALT_DMA_CCR_OPT_DAI         //Use incr burst, currently AXI slave only supports incr
                                           | ALT_DMA_CCR_OPT_DS32        
                                           | ALT_DMA_CCR_OPT_DB1        
                                           | ALT_DMA_CCR_OPT_DP_DEFAULT
