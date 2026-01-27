@@ -169,6 +169,12 @@ void readDMAStat(uint32_t* data){
     *data = *reg_addr;
 }
 
+void deassertDMAReq(void){
+    volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_DMA_OFST);
+    uint32_t reg_val = 0;
+    reg_val &= ~SRC_DMA_REQ;
+    *reg_addr = reg_val;
+}
 
 void readCTRLSource(uint32_t* data){
     volatile uint32_t* reg_addr = (volatile uint32_t* ) ( ALT_LWFPGASLVS_OFST+FPGA_DATA_SOURCE_0_AVALON_SLAVE_BASE+SRC_CTRL_OFST);
@@ -497,7 +503,7 @@ void axiTest() {
     offset = 0;
     wdata = 0x931ab6f0;
     bool err_flag = 0;
-    issueDMAReq();
+    //issueDMAReq();
     
     readAXISpace(offset, &rdata); 
     printf("AXI read result before write: 0x%08x\r\n", rdata );    
@@ -505,7 +511,7 @@ void axiTest() {
     readAXISpace(offset, &rdata);
     printf("AXI read result after write: 0x%08x\r\n", rdata );
     //writeAXISpace(offset, wdata);    
-    readDMAStat(&rdata);
+    //readDMAStat(&rdata);
     printf("AXI DMA STATUS after request issued: 0x%08x\r\n", rdata );
 
     for(offset=0;offset<4096;offset=offset+4) {

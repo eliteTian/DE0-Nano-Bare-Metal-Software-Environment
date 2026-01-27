@@ -66,6 +66,7 @@ void readRamSource(uint16_t addr, uint8_t* rdata);
 
 void issueDMAReq();
 void readDMAStat(uint32_t* data);
+void deassertDMAReq();
 
 void dumpRamSource(void);
 void readDbgSource(uint32_t* data);

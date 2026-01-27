@@ -102,10 +102,19 @@ wire        cmd_clear_cnt = CTRL[31];
 wire        pend    = STAT[0];
 
 assign    dma_single = 1'b1; 
-reg       dma_req_reg;
+reg[7:0]  count;
       
 assign    dma_req = DMA_CTRL[0];
 
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        count <= 0;
+    end else begin 
+        if(dma_ack) begin
+            count <= count + 1;
+        end
+    end
+end
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -130,6 +139,7 @@ always @(posedge clk or posedge rst) begin
             if(dma_ack) begin
                 DMA_CTRL[0] <= 1'b0;
             end
+            DMA_CTRL[31:24] <= count;
         end
     end
 

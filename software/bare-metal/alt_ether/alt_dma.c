@@ -41,7 +41,7 @@
 #include "alt_cache.h"
 #include "alt_dma.h"
 #include "alt_mmu.h"
-
+#include "alt_interrupt.h"
 #include "socal/alt_rstmgr.h"
 #include "socal/alt_sysmgr.h"
 
@@ -78,7 +78,7 @@
 #else
   #define dprintf  null_printf
 #endif
-
+extern uint8_t dma_done;
 /*
  * SoCAL stand in for DMA Controller registers
  *
@@ -214,7 +214,7 @@
 
 /* This flag marks the channel as being allocated. */
 #define ALT_DMA_CHANNEL_INFO_FLAG_ALLOCED (1 << 0)
-
+extern void mysleep(uint32_t cycles);
 typedef struct ALT_DMA_CHANNEL_INFO_s
 {
     uint8_t flag;
@@ -547,6 +547,72 @@ ALT_STATUS_CODE alt_dma_uninit(void)
 
     return ALT_E_SUCCESS;
 }
+
+static ALT_STATUS_CODE alt_dma_fpga_custom_irq_init(ALT_INT_INTERRUPT_t irq_num, alt_int_callback_t callback)
+{
+    
+    ALT_STATUS_CODE status = ALT_E_SUCCESS;
+
+    uint32_t int_target = 0;
+         
+    /* Ethernet IRQ Callback */
+    status = alt_int_isr_register( irq_num,
+                            callback,
+                            NULL);
+    
+    dprintf("IRQ routine registered\n");   
+
+    /* Configure the EMAC as Level. */
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_dist_trigger_set(irq_num,
+                                         ALT_INT_TRIGGER_AUTODETECT);
+        dprintf("IRQ routine trigger set registered\n");    
+    }
+ 
+    /* Configure the EMAC priority */
+    if (status == ALT_E_SUCCESS)
+    {  
+        status = alt_int_dist_priority_set(irq_num, 16);
+        dprintf("IRQ routine priority set registered\n");    
+    }
+  
+    /* Set CPUs 0 and 1 as the target. */
+    //if (status == ALT_E_SUCCESS)
+    //{                    
+    //    status = alt_int_dist_target_set(emac->irqnum, 3); //only cpu0 is there
+    //    printf("IRQ target CPU set registered\n");  
+    //}
+
+    if (   (status == ALT_E_SUCCESS)
+        && (irq_num >= 32)) /* Ignore target_set() for non-SPI interrupts. */
+    {
+        if (int_target == 0)
+        {
+            int_target = (1 << alt_int_util_cpu_count()) - 1;
+        }
+        status = alt_int_dist_target_set(irq_num, int_target);
+        dprintf("IRQ target CPU set registered\n");          
+    }    
+    
+    /* Enable the interrupt in the Distributor. */
+    if (status == ALT_E_SUCCESS)
+    {
+        status = alt_int_dist_enable(irq_num);
+        dprintf("IRQ enabled in distributor\n");  
+    }
+ 
+    return status;
+}
+
+static void alt_dma_fpga_custom_irq_callback(uint32_t icciar, void * context)
+{
+    printf("IRQ callback called\n");
+    alt_dma_int_clear(ALT_DMA_EVENT_0);
+    dma_done = 1;
+
+}
+
 
 ALT_STATUS_CODE alt_dma_channel_alloc(ALT_DMA_CHANNEL_t channel)
 {
@@ -5519,7 +5585,6 @@ static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program
                                                      bool first)
 {
     ALT_STATUS_CODE status = ALT_E_SUCCESS;
-
     uintptr_t key_hole = (uintptr_t)(fpga_buff->location) + fpga_buff->offset;
 
     dprintf("DMA[M->P][FPGA custom]: Create %u custom write(s) [first = %s].\n", request_count, (first ? "true" : "false"));
@@ -5542,7 +5607,7 @@ static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program
                                           | ALT_DMA_CCR_OPT_SC(7)
                                           | ALT_DMA_CCR_OPT_DAI         //Use incr burst, currently AXI slave only supports incr
                                           | ALT_DMA_CCR_OPT_DS32        
-                                          | ALT_DMA_CCR_OPT_DB1        
+                                          | ALT_DMA_CCR_OPT_DB1      //destination burst number  
                                           | ALT_DMA_CCR_OPT_DP_DEFAULT
                                           | ALT_DMA_CCR_OPT_DC_DEFAULT
                                           | ALT_DMA_CCR_OPT_ES_DEFAULT
@@ -5550,11 +5615,12 @@ static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program
             );
     }
 
+
     while (request_count > 0)
     {
         uint32_t loopcount = ALT_MIN(request_count, 256);
         request_count -= loopcount;
-
+        loopcount = loopcount;
         if (status != ALT_E_SUCCESS)
         {
             break;
@@ -5580,11 +5646,13 @@ static ALT_STATUS_CODE alt_dma_memory_to_fpga_custom(ALT_DMA_PROGRAM_t * program
         if (status == ALT_E_SUCCESS)
         {
             status = alt_dma_program_DMALD(program, ALT_DMA_PROGRAM_INST_MOD_SINGLE);
+            //status = alt_dma_program_DMALD(program,ALT_DMA_PROGRAM_INST_MOD_BURST );
         }
 
         if (status == ALT_E_SUCCESS)
         {
             status = alt_dma_program_DMAST(program, ALT_DMA_PROGRAM_INST_MOD_SINGLE);
+            //status = alt_dma_program_DMAST(program, ALT_DMA_PROGRAM_INST_MOD_BURST);
         }
 
         if ((status == ALT_E_SUCCESS) && (loopcount > 1))
@@ -5612,6 +5680,15 @@ ALT_STATUS_CODE alt_dma_memory_to_periph(ALT_DMA_CHANNEL_t channel,
     if ((size == 0) && (send_evt == false))
     {
         return ALT_E_SUCCESS;
+    }
+    ALT_DMA_EVENT_SELECT_t event_type = ALT_DMA_EVENT_SELECT_SIG_IRQ; //enable interrupt
+
+    status = alt_dma_event_int_select(evt, event_type);
+    if (status == ALT_E_SUCCESS)
+    {
+
+       ALT_INT_INTERRUPT_t irq_num = ALT_INT_INTERRUPT_DMA_IRQ0; //define a var that stores irq num
+       alt_dma_fpga_custom_irq_init(irq_num, alt_dma_fpga_custom_irq_callback);
     }
 
     if (status == ALT_E_SUCCESS)
@@ -5934,6 +6011,15 @@ ALT_STATUS_CODE alt_dma_ecc_start(void * block, size_t size)
 
     return ALT_E_SUCCESS;
 }
+
+
+
+
+
+
+
+
+
 
 
 
