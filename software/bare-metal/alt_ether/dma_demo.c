@@ -55,7 +55,7 @@
 uint8_t Write_Buffer[MAX_TEST_BYTES];
 uint8_t Read_Buffer[MAX_TEST_BYTES];
 
-uint32_t axi_buffer[384] = { 0x95653525, 0x97842561};
+uint32_t axi_buffer[1024] = { 0x95653525, 0x97842561};
 
 // DMA channel to be used
 ALT_DMA_CHANNEL_t Dma_Channel;

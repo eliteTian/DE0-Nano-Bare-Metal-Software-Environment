@@ -601,7 +601,7 @@ assign  {bottom_araddr, rsv_addr_lhsv,                     //32bit
          bottom_arid, rsv1, bottom_arvalid} = ar_cmd_to_process;
 
 //storage space
-reg[31:0]  axi_mem[0:2**(ADDR_WIDTH-3)-1]; //each is a word, not a bite.
+reg[31:0]  axi_mem[0:2**(ADDR_WIDTH-2)-1]; //each is a word, not a bite.
 
 
 wire[ADDR_WIDTH-3:0] rd_ram_index = araddr[ADDR_WIDTH-1:2];
