@@ -17,7 +17,7 @@
 #include "alt_cache.h"
 
 
-#define FPGA_TEST
+//#define FPGA_TEST
 //#define ETH_TEST
 #define DMA_TEST
 //#define PERIPH_TEST
@@ -117,32 +117,29 @@ int eth_main(alt_eth_emac_instance_t* emac) {
 
 	uint32_t  stat,addr;
     uint32_t  dma_status;
-    uint8_t   test_frame[FRAM_BUF_SIZE];
-    uint32_t rcv_len = 0;
-    ethernet_raw_frame_gen( sizeof(test_frame),MAC_ADDR,test_frame);
+    //uint8_t   test_frame[FRAM_BUF_SIZE]; // a temp array on stack, 384 bytes.
+    //ethernet_raw_frame_gen( sizeof(test_frame),MAC_ADDR,test_frame); //generate a raw frame that has incrementing payload value.
+    uint32_t rcv_len = 0; //a temp var to hold received frame's length.
     emac->instance = 1;
-    alt_eth_emac_dma_init(emac); 
-    uint32_t last_rxints = emac->rxints;
+    alt_eth_emac_dma_init(emac); //emac and phy initialization
+    uint32_t last_rxints = emac->rxints; //a temp var to hold previous interrupt numbers that is stored in the struct.
     //uint32_t last_txints = emac->txints;
-    stat =  alt_read_word (ALT_EMAC1_GMAC_SGMII_RGMII_SMII_CTL_STAT_ADDR);
+
 
     while(1) { //poll for the moment until watchdog triggers
-//        begin:
-        if(last_rxints != emac->rxints) {
+        if(last_rxints != emac->rxints) { //callback function increments rxints when rx interrupt triggers
             last_rxints++;
             dma_status = alt_read_word(0xFF703014);
-            alt_eth_get_packet(rx_frame_buffer,&rcv_len,emac);
-            ethCtlLed(rx_frame_buffer);
-//            goto begin;
-            swap_addr(rx_frame_buffer, sizeof(rx_frame_buffer));
-            for(int i =0;i!=14;i++) {
-                tx_frame_buffer[i] = rx_frame_buffer[i];
+            alt_eth_get_packet(rx_frame_buffer,&rcv_len,emac); //rx_frame_buffer is a location in global region
+            //ethCtlLed(rx_frame_buffer); //small function that uses a packet's info to toggle LED
+            swap_addr(rx_frame_buffer, sizeof(rx_frame_buffer)); //swaps the dst and src address of the received packet.
+            for(int i =0;i!=14;i++) { //tx_frame_buffer is a location in global region
+                tx_frame_buffer[i] = rx_frame_buffer[i]; //pops up tx_frame_buffer's raw frame header, src+dst+type = 14byte
             }
 
             printf("Call back reading dma int status is 0x%08x, received packet len is 0x%08x \n", dma_status, rcv_len );
-            //fpgaCustomTest(frame_buffer);
-            ethSinLoop(rx_frame_buffer,tx_frame_buffer+14,rcv_len);
-            for(int i = 14;i!=rcv_len;i++) {
+            ethSinLoop(rx_frame_buffer,tx_frame_buffer+14,rcv_len); //
+            for(int i = 14;i!=rcv_len;i++) { //print out the content of rx_frame_buffer for plotting in plotting software
                 printf("(%d,%d)",i, (int8_t)rx_frame_buffer[i] ); //
                 if(i%10 ==9) {
                     printf("\r\n" );
@@ -151,7 +148,7 @@ int eth_main(alt_eth_emac_instance_t* emac) {
                 }
             }
             printf("\r\n" );
-            for(int i = 14;i!=rcv_len;i++) {
+            for(int i = 14;i!=rcv_len;i++) { //print out the content of tx_frame_buffer for plotting in plotting software
                 printf("(%d,%d)",i, (int8_t)tx_frame_buffer[i] ); //
                 if(i%10 ==9) {
                     printf("\r\n" );

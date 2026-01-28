@@ -381,49 +381,8 @@ ALT_STATUS_CODE dma_demo_memory_to_fpga(void * src, void * periph_info, uint32_t
     }
 
     
-
-    // Wait for transfer to complete
-    //if (status == ALT_E_SUCCESS)
-    //{
-    //    ALT_PRINTF("INFO: Waiting for DMA transfer to complete.\n");
-    //    ALT_DMA_CHANNEL_STATE_t channel_state = ALT_DMA_CHANNEL_STATE_EXECUTING;
-    //    while((status == ALT_E_SUCCESS) && (channel_state != ALT_DMA_CHANNEL_STATE_STOPPED))
-    //    {
-    //        issueDMAReq();
-    //        status = alt_dma_channel_state_get(Dma_Channel, &channel_state);
-    //        if(channel_state == ALT_DMA_CHANNEL_STATE_FAULTING)
-    //        {
-    //            ALT_DMA_CHANNEL_FAULT_t fault;
-    //             alt_dma_channel_fault_status_get(Dma_Channel, &fault);
-    //             ALT_PRINTF("ERROR: DMA CHannel Fault: %d\n", (int)fault);
-    //             status = ALT_E_ERROR;
-    //        }
-    //        mysleep(1000*1000);
-    //        readDMAStat(&rdata);
-    //        printf("AXI DMA STATUS after request issued: 0x%08x\r\n", rdata );
-    //        deassertDMAReq();
-    //        readDMAStat(&rdata);
-    //        printf("AXI DMA STATUS after deassert issued: 0x%08x\r\n", rdata );
-    //        
-    //        status = alt_dma_channel_state_get(Dma_Channel, &channel_state);
-    //        ALT_PRINTF("[Hufei]:DMA Channel while waiting is: %d = %d\n", Dma_Channel,channel_state);
-
-
-    //    }
-    //}
-
-
-    
     ALT_PRINTF("[Hufei]:DMA Channel Ultimate Check of state is: %d = %d\n", Dma_Channel,channel_state);
-    // Compare results
-    //if(status == ALT_E_SUCCESS)
-    //{
-    //    ALT_PRINTF("INFO: Comparing source and destination buffers.\n");
-    //    if(0  != memcmp(src, dst, size))
-    //    {
-    //        status = ALT_E_ERROR;
-    //    }
-    //}
+
 
     // Display result
     if(status == ALT_E_SUCCESS)
